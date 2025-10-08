@@ -1,6 +1,6 @@
 # nvim-chess
 
-[![Tests](https://img.shields.io/badge/tests-failing-red)](https://github.com/linuxswords/nvim-chess/actions)
+[![Tests](https://img.shields.io/badge/tests-passing-green)](https://github.com/linuxswords/nvim-chess/actions)
 
 A Neovim plugin for playing chess on Lichess.org directly from your editor.
 
@@ -130,6 +130,7 @@ Use UCI (Universal Chess Interface) notation for moves:
 | Command                | Description                                |
 | ---------------------- | ------------------------------------------ |
 | `:ChessNewGame [time]` | Create new game with optional time control |
+| `:ChessSeekGame [time]` | Seek a game with optional time control |
 | `:ChessJoinGame {id}`  | Join existing game by ID                   |
 | `:ChessShowBoard [id]` | Show board for current/specified game      |
 | `:ChessMove {move}`    | Make a move (UCI notation)                 |
@@ -138,6 +139,13 @@ Use UCI (Universal Chess Interface) notation for moves:
 | `:ChessAbort`          | Abort current game                         |
 | `:ChessStartStreaming` | Start real-time event streaming            |
 | `:ChessStopStreaming`  | Stop all streaming                         |
+
+### Testing Commands
+
+| Command                | Description                                |
+| ---------------------- | ------------------------------------------ |
+| `:ChessDemo [type]`    | Run demo scenarios (basic\|errors\|game\|bench\|interactive) |
+| `:ChessMock {on\|off}` | Enable/disable mock mode for testing      |
 
 ## Board Display
 
@@ -194,9 +202,57 @@ MIT License - see LICENSE file for details.
 
 Contributions welcome! Please read the contributing guidelines and submit pull requests.
 
+## Local Testing
+
+You can test the plugin functionality without a Lichess account using the built-in mock system:
+
+### Quick Testing
+
+```bash
+# Run a quick demo
+make demo
+
+# Run all tests
+make test
+
+# Run just unit tests
+make test-unit
+
+# Benchmark performance
+make bench
+```
+
+### Manual Testing
+
+```vim
+" Enable mock mode (no real API calls)
+:ChessMock on
+
+" Run interactive demo
+:ChessDemo interactive
+
+" Test basic functionality
+:ChessDemo basic
+
+" Test error scenarios
+:ChessDemo errors
+
+" Disable mock mode
+:ChessMock off
+```
+
+### Available Demo Types
+
+- `basic` - Profile, game creation, board display
+- `errors` - Error handling scenarios
+- `game` - Complete game flow with moves
+- `bench` - Performance benchmarking
+- `interactive` - Manual testing mode
+
 ## Support
 
 - File issues on GitHub
 - Check the documentation with `:help nvim-chess`
-- Ensure you have a valid Lichess token configured
+- Use `:ChessDemo` for local testing without Lichess account
+- Ensure you have a valid Lichess token configured for real gameplay
 

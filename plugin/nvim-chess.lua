@@ -93,3 +93,40 @@ vim.api.nvim_create_user_command("ChessStopStreaming", function()
 end, {
   desc = "Stop all streaming connections"
 })
+
+-- Testing and demo commands
+vim.api.nvim_create_user_command("ChessDemo", function(opts)
+  local demo = require('nvim-chess.test-utils.demo')
+  if opts.args == "basic" then
+    demo.run_basic_demo()
+  elseif opts.args == "errors" then
+    demo.test_error_scenarios()
+  elseif opts.args == "game" then
+    demo.test_game_flow()
+  elseif opts.args == "bench" then
+    demo.benchmark_board_rendering()
+  elseif opts.args == "interactive" then
+    demo.interactive_test()
+  else
+    demo.quick_test()
+  end
+end, {
+  nargs = "?",
+  complete = function() return {"basic", "errors", "game", "bench", "interactive"} end,
+  desc = "Run demo/test scenarios (basic|errors|game|bench|interactive)"
+})
+
+vim.api.nvim_create_user_command("ChessMock", function(opts)
+  local mock = require('nvim-chess.test-utils.mock')
+  if opts.args == "on" or opts.args == "enable" then
+    mock.enable()
+  elseif opts.args == "off" or opts.args == "disable" then
+    mock.disable()
+  else
+    vim.notify("Mock mode is " .. (mock.is_enabled() and "enabled" or "disabled"), vim.log.levels.INFO)
+  end
+end, {
+  nargs = "?",
+  complete = function() return {"on", "off", "enable", "disable"} end,
+  desc = "Enable/disable mock mode for testing (on|off)"
+})

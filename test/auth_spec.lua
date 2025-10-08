@@ -1,9 +1,20 @@
 local auth = require('nvim-chess.auth.manager')
 
 describe('nvim-chess authentication', function()
+  local original_get_user_profile
+
   before_each(function()
     -- Clear any existing session
     auth.clear_session()
+    -- Store original function
+    original_get_user_profile = auth.get_user_profile
+  end)
+
+  after_each(function()
+    -- Restore original function if it was modified
+    if original_get_user_profile then
+      auth.get_user_profile = original_get_user_profile
+    end
   end)
 
   describe('token management', function()
@@ -51,11 +62,13 @@ describe('nvim-chess authentication', function()
 
   describe('user profile', function()
     it('should handle profile storage', function()
-      -- This would require mocking the API client for proper testing
+      -- Initially no profile
       local profile = auth.get_user_profile()
-      assert.is_nil(profile) -- Initially no profile
+      assert.is_nil(profile)
 
-      -- Would need to test with actual API responses
+      -- This would require mocking the API client for proper testing
+      -- For now, just verify the function exists and returns nil initially
+      assert.is_function(auth.get_user_profile)
     end)
   end)
 end)
