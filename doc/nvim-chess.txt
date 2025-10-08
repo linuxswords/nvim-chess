@@ -1,0 +1,144 @@
+*nvim-chess.txt*    A Neovim plugin for playing chess on Lichess.org
+
+                              nvim-chess
+                  Chess plugin for Neovim with Lichess integration
+
+==============================================================================
+CONTENTS                                              *nvim-chess-contents*
+
+    1. Introduction .............................. |nvim-chess-introduction|
+    2. Requirements .............................. |nvim-chess-requirements|
+    3. Installation .............................. |nvim-chess-installation|
+    4. Configuration ............................. |nvim-chess-configuration|
+    5. Usage ..................................... |nvim-chess-usage|
+    6. Commands .................................. |nvim-chess-commands|
+    7. Keybindings ............................... |nvim-chess-keybindings|
+    8. License ................................... |nvim-chess-license|
+
+==============================================================================
+INTRODUCTION                                      *nvim-chess-introduction*
+
+nvim-chess is a Neovim plugin that allows you to play chess directly within
+your editor by connecting to Lichess.org. You can create games, join existing
+games, make moves, and view your profile - all without leaving Neovim.
+
+Features:
+- Play chess games on Lichess.org
+- Real-time game updates via streaming API
+- Text-based chess board with Unicode or ASCII pieces
+- Profile and rating information
+- Game creation and management
+- Move validation and notation
+
+==============================================================================
+REQUIREMENTS                                      *nvim-chess-requirements*
+
+- Neovim 0.7+
+- plenary.nvim plugin (for HTTP requests)
+- Lichess.org account and personal access token
+
+==============================================================================
+INSTALLATION                                      *nvim-chess-installation*
+
+Using packer.nvim: >
+    use {
+      'your-username/nvim-chess',
+      requires = { 'nvim-lua/plenary.nvim' }
+    }
+<
+
+Using lazy.nvim: >
+    {
+      'your-username/nvim-chess',
+      dependencies = { 'nvim-lua/plenary.nvim' }
+    }
+<
+
+==============================================================================
+CONFIGURATION                                    *nvim-chess-configuration*
+
+Setup the plugin with your Lichess personal access token: >
+
+    require('nvim-chess').setup({
+      lichess = {
+        token = "your_lichess_token_here",  -- Required
+        timeout = 30000,                   -- Request timeout in ms
+      },
+      ui = {
+        board_style = "unicode",           -- "unicode" or "ascii"
+        auto_refresh = true,               -- Auto-refresh board
+        show_coordinates = true,           -- Show board coordinates
+        highlight_last_move = true,        -- Highlight last move
+      },
+      game = {
+        auto_accept_challenges = false,    -- Auto-accept challenges
+        default_time_control = "10+0",     -- Default time control
+      }
+    })
+<
+
+To get a personal access token:
+1. Go to https://lichess.org/account/oauth/token
+2. Create a new token with appropriate scopes
+3. Add it to your Neovim configuration
+
+==============================================================================
+USAGE                                                    *nvim-chess-usage*
+
+Basic workflow:
+1. Configure the plugin with your Lichess token
+2. Start event streaming: `:ChessStartStreaming`
+3. Create a new game: `:ChessNewGame 10+0`
+4. Or join existing game: `:ChessJoinGame game_id`
+5. Make moves with: `:ChessMove e2e4` or press `m` in board buffer
+6. View your profile: `:ChessProfile`
+
+==============================================================================
+COMMANDS                                              *nvim-chess-commands*
+
+:ChessNewGame [time_control]                              *:ChessNewGame*
+    Create a new chess game. Optional time control format: "minutes+increment"
+    Example: `:ChessNewGame 10+0` creates a 10-minute game with no increment
+
+:ChessJoinGame {game_id}                                  *:ChessJoinGame*
+    Join an existing chess game by its ID
+
+:ChessShowBoard [game_id]                                 *:ChessShowBoard*
+    Show the chess board for current or specified game
+
+:ChessMove {move}                                         *:ChessMove*
+    Make a chess move using UCI notation (e.g., "e2e4", "a7a8q")
+
+:ChessProfile                                             *:ChessProfile*
+    Display your Lichess profile information and ratings
+
+:ChessResign                                              *:ChessResign*
+    Resign the current game
+
+:ChessAbort                                               *:ChessAbort*
+    Abort the current game (only available in early game)
+
+:ChessStartStreaming                                      *:ChessStartStreaming*
+    Start streaming Lichess events for real-time updates
+
+:ChessStopStreaming                                       *:ChessStopStreaming*
+    Stop all streaming connections
+
+==============================================================================
+KEYBINDINGS                                          *nvim-chess-keybindings*
+
+In chess board buffers, the following keybindings are available:
+
+    q           Close the board buffer
+    m           Prompt for a move input
+    f           Flip the board orientation
+    R           Resign the current game
+    A           Abort the current game
+    <C-r>       Refresh the board display
+
+==============================================================================
+LICENSE                                                *nvim-chess-license*
+
+MIT License
+
+ vim:tw=78:ts=8:ft=help:norl:
