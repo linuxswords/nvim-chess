@@ -53,21 +53,93 @@ function M.new_game(time_control)
 
   local result, error = api.create_challenge(challenge_opts)
 
+  -- If challenge creation fails, try seeking a game instead
   if error then
-    vim.notify("Failed to create game: " .. error, vim.log.levels.ERROR)
+    vim.notify("Challenge creation failed, trying to seek game: " .. error, vim.log.levels.WARN)
+
+    local seek_opts = {}
+    if clock then
+      seek_opts.time = clock.limit / 60  -- Convert seconds to minutes
+      seek_opts.increment = clock.increment
+    end
+
+    result, error = api.seek_game(seek_opts)
+
+    if error then
+      vim.notify("Failed to create/seek game: " .. error, vim.log.levels.ERROR)
+      return false
+    end
+  end
+
+  -- Debug: Print the actual response structure
+  vim.notify("API Response: " .. vim.inspect(result), vim.log.levels.DEBUG)
+
+  if result then
+    -- Handle different possible response structures
+    local challenge_id, challenge_url
+
+    if result.challenge then
+      challenge_id = result.challenge.id
+      challenge_url = result.challenge.url
+    elseif result.id then
+      challenge_id = result.id
+      challenge_url = result.url
+    elseif result.game then
+      -- Sometimes the API returns a game object directly
+      challenge_id = result.game.id
+      challenge_url = "https://lichess.org/" .. result.game.id
+    else
+      -- Try to extract any URL from the response
+      if result.url then
+        challenge_url = result.url
+        challenge_id = result.url:match("([^/]+)$") -- Extract ID from URL
+      end
+    end
+
+    if challenge_url then
+      vim.notify("Challenge created: " .. challenge_url, vim.log.levels.INFO)
+      return challenge_id or "unknown"
+    end
+  end
+
+  vim.notify("Unexpected response when creating challenge: " .. vim.inspect(result), vim.log.levels.ERROR)
+  return false
+end
+
+function M.seek_game(time_control)
+  if not auth.is_authenticated() then
+    vim.notify("Not authenticated. Please set your Lichess token.", vim.log.levels.ERROR)
     return false
   end
 
-  if result and result.challenge then
-    local challenge_id = result.challenge.id
-    local challenge_url = result.challenge.url
-    vim.notify("Challenge created: " .. challenge_url, vim.log.levels.INFO)
+  local seek_opts = {}
 
-    -- TODO: Start monitoring for challenge acceptance
-    return challenge_id
+  -- Parse time control
+  local game_config = config.get_game_config()
+  local tc_str = time_control or game_config.default_time_control
+  local clock = parse_time_control(tc_str)
+
+  if clock then
+    seek_opts.time = clock.limit / 60  -- Convert seconds to minutes
+    seek_opts.increment = clock.increment
   end
 
-  vim.notify("Unexpected response when creating challenge", vim.log.levels.ERROR)
+  local result, error = api.seek_game(seek_opts)
+
+  if error then
+    vim.notify("Failed to seek game: " .. error, vim.log.levels.ERROR)
+    return false
+  end
+
+  -- Debug: Print the actual response structure
+  vim.notify("Seek API Response: " .. vim.inspect(result), vim.log.levels.DEBUG)
+
+  if result then
+    vim.notify("Game seek created successfully", vim.log.levels.INFO)
+    return true
+  end
+
+  vim.notify("Unexpected response when seeking game: " .. vim.inspect(result), vim.log.levels.ERROR)
   return false
 end
 

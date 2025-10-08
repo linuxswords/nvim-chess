@@ -18,6 +18,14 @@ end, {
   desc = "Create a new chess game with optional time control (e.g., '10+0')"
 })
 
+vim.api.nvim_create_user_command("ChessSeekGame", function(opts)
+  local time_control = opts.args ~= "" and opts.args or nil
+  require('nvim-chess').seek_game(time_control)
+end, {
+  nargs = "?",
+  desc = "Seek a chess game with optional time control (e.g., '10+0')"
+})
+
 vim.api.nvim_create_user_command("ChessJoinGame", function(opts)
   if opts.args == "" then
     vim.notify("Game ID required", vim.log.levels.ERROR)

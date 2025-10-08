@@ -114,7 +114,51 @@ function M.create_challenge(opts)
     form_string = form_string .. key .. "=" .. vim.uri_encode(value)
   end
 
-  return make_request('POST', '/challenge/open', { form = form_string })
+  -- Try the open challenge endpoint first
+  local result, error = make_request('POST', '/challenge/open', { form = form_string })
+
+  if error and error:match("404") then
+    -- If that fails, try the regular challenge endpoint
+    return make_request('POST', '/challenge', { form = form_string })
+  end
+
+  return result, error
+end
+
+-- Alternative function to seek a game (simpler approach)
+function M.seek_game(opts)
+  opts = opts or {}
+  local form_data = {}
+
+  if opts.rated ~= nil then
+    form_data.rated = tostring(opts.rated)
+  end
+
+  if opts.time then
+    form_data.time = tostring(opts.time)
+  end
+
+  if opts.increment then
+    form_data.increment = tostring(opts.increment)
+  end
+
+  if opts.variant then
+    form_data.variant = opts.variant
+  end
+
+  if opts.color then
+    form_data.color = opts.color
+  end
+
+  local form_string = ""
+  for key, value in pairs(form_data) do
+    if form_string ~= "" then
+      form_string = form_string .. "&"
+    end
+    form_string = form_string .. key .. "=" .. vim.uri_encode(value)
+  end
+
+  return make_request('POST', '/board/seek', { form = form_string })
 end
 
 function M.accept_challenge(challenge_id)

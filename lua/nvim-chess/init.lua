@@ -18,6 +18,10 @@ M.new_game = function(time_control)
   return require('nvim-chess.game.manager').new_game(time_control)
 end
 
+M.seek_game = function(time_control)
+  return require('nvim-chess.game.manager').seek_game(time_control)
+end
+
 M.join_game = function(game_id)
   return require('nvim-chess.game.manager').join_game(game_id)
 end
