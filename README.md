@@ -25,7 +25,7 @@ A Neovim plugin for playing chess on Lichess.org directly from your editor.
 
 ```lua
 use {
-  'your-username/nvim-chess',
+  'linuxswords/nvim-chess',
   requires = { 'nvim-lua/plenary.nvim' }
 }
 ```
@@ -34,7 +34,7 @@ use {
 
 ```lua
 {
-  'your-username/nvim-chess',
+  'linuxswords/nvim-chess',
   dependencies = { 'nvim-lua/plenary.nvim' }
 }
 ```
@@ -73,27 +73,33 @@ require('nvim-chess').setup({
 ### Basic Workflow
 
 1. **Start streaming** for real-time updates:
+
    ```vim
    :ChessStartStreaming
    ```
 
 2. **Create a new game**:
+
    ```vim
    :ChessNewGame 10+0
    ```
 
 3. **Join an existing game**:
+
    ```vim
    :ChessJoinGame abc12345
    ```
 
 4. **Make moves** using UCI notation:
+
    ```vim
    :ChessMove e2e4
    ```
+
    Or press `m` in the board buffer for interactive input.
 
 5. **View your profile**:
+
    ```vim
    :ChessProfile
    ```
@@ -112,29 +118,31 @@ When viewing a chess board, use these keys:
 ### Move Notation
 
 Use UCI (Universal Chess Interface) notation for moves:
+
 - `e2e4` - Move piece from e2 to e4
 - `a7a8q` - Promote pawn to queen
 - `e1g1` - Castling (king side)
 
 ## Commands
 
-| Command | Description |
-|---------|-------------|
+| Command                | Description                                |
+| ---------------------- | ------------------------------------------ |
 | `:ChessNewGame [time]` | Create new game with optional time control |
-| `:ChessJoinGame {id}` | Join existing game by ID |
-| `:ChessShowBoard [id]` | Show board for current/specified game |
-| `:ChessMove {move}` | Make a move (UCI notation) |
-| `:ChessProfile` | Display profile and ratings |
-| `:ChessResign` | Resign current game |
-| `:ChessAbort` | Abort current game |
-| `:ChessStartStreaming` | Start real-time event streaming |
-| `:ChessStopStreaming` | Stop all streaming |
+| `:ChessJoinGame {id}`  | Join existing game by ID                   |
+| `:ChessShowBoard [id]` | Show board for current/specified game      |
+| `:ChessMove {move}`    | Make a move (UCI notation)                 |
+| `:ChessProfile`        | Display profile and ratings                |
+| `:ChessResign`         | Resign current game                        |
+| `:ChessAbort`          | Abort current game                         |
+| `:ChessStartStreaming` | Start real-time event streaming            |
+| `:ChessStopStreaming`  | Stop all streaming                         |
 
 ## Board Display
 
 The plugin displays chess boards using either Unicode or ASCII pieces:
 
 ### Unicode Style
+
 ```
   a b c d e f g h
 8 ♜ ♞ ♝ ♛ ♚ ♝ ♞ ♜  8
@@ -149,6 +157,7 @@ The plugin displays chess boards using either Unicode or ASCII pieces:
 ```
 
 ### ASCII Style
+
 ```
   a b c d e f g h
 8 r n b q k b n r  8
@@ -188,3 +197,4 @@ Contributions welcome! Please read the contributing guidelines and submit pull r
 - File issues on GitHub
 - Check the documentation with `:help nvim-chess`
 - Ensure you have a valid Lichess token configured
+
