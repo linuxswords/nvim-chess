@@ -1,0 +1,17 @@
+# Environment files with secrets
+.env
+
+# Temporary test files
+*.tmp
+test_*.lua
+
+# Neovim swap files
+*.swp
+*.swo
+
+# Debug files
+debug.log
+
+# OS specific
+.DS_Store
+Thumbs.db

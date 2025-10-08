@@ -7,9 +7,11 @@ help:
 	@echo "nvim-chess development commands:"
 	@echo ""
 	@echo "Testing:"
-	@echo "  test           - Run all tests"
+	@echo "  test           - Run unit and demo tests"
+	@echo "  test-all       - Run all tests including integration"
 	@echo "  test-unit      - Run unit tests only"
-	@echo "  test-demo      - Run demo/integration tests"
+	@echo "  test-integration - Run integration tests (requires LICHESS_TOKEN)"
+	@echo "  test-demo      - Run demo tests"
 	@echo "  demo           - Run interactive demo"
 	@echo ""
 	@echo "Development:"
@@ -20,13 +22,28 @@ help:
 	@echo "Quick testing:"
 	@echo "  make demo      - Quick way to test functionality"
 
-# Run all tests
+# Run all tests (unit + demo, integration separate)
 test: test-unit test-demo
+
+# Run all tests including integration (requires LICHESS_TOKEN)
+test-all: test-unit test-integration test-demo
 
 # Run unit tests with plenary
 test-unit:
 	@echo "Running unit tests..."
-	@nvim --headless -c "PlenaryBustedDirectory test/" -c "qa"
+	@nvim --headless -c "PlenaryBustedDirectory test/ --exclude=integration" -c "qa"
+
+# Run integration tests (requires LICHESS_TOKEN)
+test-integration:
+	@echo "Running integration tests..."
+	@if [ -z "$$LICHESS_TOKEN" ]; then \
+		echo "❌ LICHESS_TOKEN environment variable not set"; \
+		echo "   Set it with: export LICHESS_TOKEN=your_token_here"; \
+		echo "   Get token from: https://lichess.org/account/oauth/token"; \
+		exit 1; \
+	fi
+	@echo "✅ LICHESS_TOKEN found, running integration tests..."
+	@nvim --headless -c "PlenaryBustedFile test/integration_spec.lua" -c "qa"
 
 # Run demo tests
 test-demo:

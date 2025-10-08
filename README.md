@@ -212,11 +212,18 @@ You can test the plugin functionality without a Lichess account using the built-
 # Run a quick demo
 make demo
 
-# Run all tests
+# Run unit and demo tests
 make test
 
 # Run just unit tests
 make test-unit
+
+# Run integration tests (requires LICHESS_TOKEN)
+export LICHESS_TOKEN=your_token_here
+make test-integration
+
+# Run all tests including integration
+make test-all
 
 # Benchmark performance
 make bench
@@ -248,6 +255,29 @@ make bench
 - `game` - Complete game flow with moves
 - `bench` - Performance benchmarking
 - `interactive` - Manual testing mode
+
+### Integration Testing
+
+Test with real Lichess API (requires personal access token):
+
+```bash
+# Get token from https://lichess.org/account/oauth/token
+export LICHESS_TOKEN=your_token_here
+
+# Run integration tests
+./integration-test.sh
+
+# Or directly with make
+make test-integration
+```
+
+Integration tests verify:
+- Token validation
+- Profile fetching
+- API rate limiting
+- Error handling
+- Network timeouts
+- Game operations
 
 ## Support
 
