@@ -1,5 +1,7 @@
 # nvim-chess
 
+[![Tests](https://img.shields.io/badge/tests-failing-red)](https://github.com/linuxswords/nvim-chess/actions)
+
 A Neovim plugin for playing chess on Lichess.org directly from your editor.
 
 ## Features
