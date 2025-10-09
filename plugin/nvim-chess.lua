@@ -130,3 +130,33 @@ end, {
   complete = function() return {"on", "off", "enable", "disable"} end,
   desc = "Enable/disable mock mode for testing (on|off)"
 })
+
+-- Puzzle commands
+vim.api.nvim_create_user_command("ChessDailyPuzzle", function()
+  require('nvim-chess').daily_puzzle()
+end, {
+  desc = "Get the daily puzzle from Lichess"
+})
+
+vim.api.nvim_create_user_command("ChessNextPuzzle", function()
+  require('nvim-chess').next_puzzle()
+end, {
+  desc = "Get the next training puzzle (requires authentication)"
+})
+
+vim.api.nvim_create_user_command("ChessGetPuzzle", function(opts)
+  if opts.args == "" then
+    vim.notify("Puzzle ID required", vim.log.levels.ERROR)
+    return
+  end
+  require('nvim-chess').get_puzzle(opts.args)
+end, {
+  nargs = 1,
+  desc = "Get a specific puzzle by ID"
+})
+
+vim.api.nvim_create_user_command("ChessPuzzleActivity", function()
+  require('nvim-chess').puzzle_activity()
+end, {
+  desc = "View your puzzle activity history (requires authentication)"
+})

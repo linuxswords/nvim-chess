@@ -81,6 +81,9 @@ local function parse_fen_position(fen)
   return board
 end
 
+-- Export parse_fen_position for use by puzzle module
+M.parse_fen_position = parse_fen_position
+
 local function render_board(board, flip)
   local pieces = get_piece_set()
   local ui_config = config.get_ui_config()

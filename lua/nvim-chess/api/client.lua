@@ -227,4 +227,34 @@ function M.upgrade_to_bot()
   return make_request('POST', '/bot/account/upgrade')
 end
 
+-- Puzzle operations
+function M.get_daily_puzzle()
+  return make_request('GET', '/api/puzzle/daily')
+end
+
+function M.get_next_puzzle()
+  return make_request('GET', '/api/puzzle/next')
+end
+
+function M.get_puzzle(puzzle_id)
+  return make_request('GET', '/api/puzzle/' .. puzzle_id)
+end
+
+function M.get_puzzle_activity(max, before)
+  local params = {}
+  if max then
+    table.insert(params, 'max=' .. tostring(max))
+  end
+  if before then
+    table.insert(params, 'before=' .. tostring(before))
+  end
+  local query = #params > 0 and ('?' .. table.concat(params, '&')) or ''
+  return make_request('GET', '/api/puzzle/activity' .. query)
+end
+
+function M.get_puzzle_dashboard(days)
+  local query = days and ('?days=' .. tostring(days)) or ''
+  return make_request('GET', '/api/puzzle/dashboard' .. query)
+end
+
 return M

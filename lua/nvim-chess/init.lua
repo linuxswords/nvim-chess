@@ -113,4 +113,21 @@ M.get_profile = function()
   return false
 end
 
+-- Puzzle functions
+M.daily_puzzle = function()
+  return require('nvim-chess.puzzle.manager').get_daily_puzzle()
+end
+
+M.next_puzzle = function()
+  return require('nvim-chess.puzzle.manager').get_next_puzzle()
+end
+
+M.get_puzzle = function(puzzle_id)
+  return require('nvim-chess.puzzle.manager').get_puzzle(puzzle_id)
+end
+
+M.puzzle_activity = function()
+  return require('nvim-chess.puzzle.manager').get_puzzle_activity()
+end
+
 return M

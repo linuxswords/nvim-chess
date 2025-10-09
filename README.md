@@ -7,6 +7,7 @@ A Neovim plugin for playing chess on Lichess.org directly from your editor.
 ## Features
 
 - 🏆 Play chess games on Lichess.org
+- 🧩 Solve chess puzzles (daily puzzles and training)
 - ⚡ Real-time game updates via streaming API
 - 🎨 Text-based chess board with Unicode or ASCII pieces
 - 👤 Profile and rating information
@@ -14,6 +15,7 @@ A Neovim plugin for playing chess on Lichess.org directly from your editor.
 - ✅ Move validation and UCI notation
 - 📱 Challenge management
 - 🔄 Auto-refresh and flip board functionality
+- 📊 Puzzle activity tracking
 
 ## Requirements
 
@@ -125,7 +127,51 @@ Use UCI (Universal Chess Interface) notation for moves:
 - `a7a8q` - Promote pawn to queen
 - `e1g1` - Castling (king side)
 
+## Puzzle Solving
+
+### Getting Started with Puzzles
+
+1. **Solve the daily puzzle** (no authentication required):
+
+   ```vim
+   :ChessDailyPuzzle
+   ```
+
+2. **Train with puzzles** (requires Lichess token):
+
+   ```vim
+   :ChessNextPuzzle
+   ```
+
+3. **Load a specific puzzle**:
+
+   ```vim
+   :ChessGetPuzzle abc12345
+   ```
+
+### Puzzle Controls
+
+When viewing a puzzle, use these keys:
+
+- `m` - Make a move (enter move in UCI notation)
+- `h` - Show hint (displays the starting and ending square)
+- `s` - Show full solution
+- `n` - Get next puzzle
+- `q` - Close puzzle
+- `<C-r>` - Refresh puzzle display
+
+### How Puzzles Work
+
+- Puzzles present a position where you need to find the best move(s)
+- The board automatically flips to show the position from the side to move
+- Enter moves in UCI notation (e.g., `e2e4`)
+- If you make the correct move, the opponent's response is played automatically
+- Continue until you've solved the entire puzzle or make a wrong move
+- Puzzle ratings and themes are displayed to help you learn
+
 ## Commands
+
+### Game Commands
 
 | Command                | Description                                |
 | ---------------------- | ------------------------------------------ |
@@ -139,6 +185,15 @@ Use UCI (Universal Chess Interface) notation for moves:
 | `:ChessAbort`          | Abort current game                         |
 | `:ChessStartStreaming` | Start real-time event streaming            |
 | `:ChessStopStreaming`  | Stop all streaming                         |
+
+### Puzzle Commands
+
+| Command                  | Description                                |
+| ------------------------ | ------------------------------------------ |
+| `:ChessDailyPuzzle`      | Solve today's daily puzzle                 |
+| `:ChessNextPuzzle`       | Get next training puzzle (auth required)   |
+| `:ChessGetPuzzle {id}`   | Load a specific puzzle by ID               |
+| `:ChessPuzzleActivity`   | View puzzle history (auth required)        |
 
 ### Testing Commands
 
