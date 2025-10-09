@@ -49,14 +49,20 @@ use {
 
 1. Go to [https://lichess.org/account/oauth/token](https://lichess.org/account/oauth/token)
 2. Create a new personal access token
-3. Select appropriate scopes (recommend: `board:play`, `challenge:read`, `challenge:write`)
+3. Select appropriate scopes (recommend: `board:play`, `challenge:read`, `challenge:write`, `puzzle:read`)
 
-### Setup
+### Authentication
+
+You can authenticate in multiple ways:
+
+#### Option 1: Setup Configuration (Recommended for persistent auth)
+
+Configure your token once in your Neovim config, then use `:ChessAuthenticate` to activate:
 
 ```lua
 require('nvim-chess').setup({
   lichess = {
-    token = "your_lichess_token_here",  -- Required: Your Lichess personal access token
+    token = "your_lichess_token_here",  -- Your Lichess personal access token
     timeout = 30000,                   -- Request timeout in milliseconds
   },
   ui = {
@@ -71,6 +77,39 @@ require('nvim-chess').setup({
   }
 })
 ```
+
+Then validate and activate:
+```vim
+:ChessAuthenticate
+" Uses your configured token automatically and validates it
+```
+
+#### Option 2: Interactive Command (No config needed)
+
+```vim
+:ChessAuthenticate
+" Prompts for token if none configured
+```
+
+#### Option 3: Direct Token (One-time use)
+
+```vim
+:ChessAuthenticate your_token_here
+" Uses provided token, overrides config
+```
+
+### Authentication Commands
+
+| Command | Description |
+|---------|-------------|
+| `:ChessAuthenticate [token]` | Authenticate with Lichess (uses configured token, prompts if none, or uses provided token) |
+| `:ChessStatus` | Show current authentication status |
+| `:ChessLogout` | Logout from Lichess |
+
+**How `:ChessAuthenticate` works:**
+1. If you provide a token: Uses that token
+2. If token configured in setup: Uses configured token
+3. Otherwise: Prompts you to enter token
 
 ## Usage
 
@@ -137,10 +176,18 @@ Use UCI (Universal Chess Interface) notation for moves:
    :ChessDailyPuzzle
    ```
 
-2. **Train with puzzles** (requires Lichess token):
+2. **Train with puzzles** (works without auth, better with it):
 
    ```vim
    :ChessNextPuzzle
+   ```
+
+   *Without authentication: Random puzzles*
+   *With authentication: Rating-matched puzzles*
+
+   To get rating-matched puzzles, authenticate first:
+   ```vim
+   :ChessAuthenticate
    ```
 
 3. **Load a specific puzzle**:
@@ -191,9 +238,17 @@ When viewing a puzzle, use these keys:
 | Command                  | Description                                |
 | ------------------------ | ------------------------------------------ |
 | `:ChessDailyPuzzle`      | Solve today's daily puzzle                 |
-| `:ChessNextPuzzle`       | Get next training puzzle (auth required)   |
+| `:ChessNextPuzzle`       | Get next puzzle (random or rating-matched with auth) |
 | `:ChessGetPuzzle {id}`   | Load a specific puzzle by ID               |
 | `:ChessPuzzleActivity`   | View puzzle history (auth required)        |
+
+### Authentication Commands
+
+| Command                  | Description                                |
+| ------------------------ | ------------------------------------------ |
+| `:ChessAuthenticate [token]` | Authenticate with Lichess (prompts if no token) |
+| `:ChessStatus`           | Show current authentication status         |
+| `:ChessLogout`           | Logout from Lichess                        |
 
 ### Version Commands
 

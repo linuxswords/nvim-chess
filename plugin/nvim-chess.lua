@@ -141,7 +141,7 @@ end, {
 vim.api.nvim_create_user_command("ChessNextPuzzle", function()
   require('nvim-chess').next_puzzle()
 end, {
-  desc = "Get the next training puzzle (requires authentication)"
+  desc = "Get next puzzle (random, or rating-matched with auth)"
 })
 
 vim.api.nvim_create_user_command("ChessGetPuzzle", function(opts)
@@ -172,4 +172,25 @@ vim.api.nvim_create_user_command("ChessInfo", function()
   require('nvim-chess.version').show_info()
 end, {
   desc = "Show detailed nvim-chess information"
+})
+
+-- Authentication commands
+vim.api.nvim_create_user_command("ChessAuthenticate", function(opts)
+  local token = opts.args ~= "" and opts.args or nil
+  require('nvim-chess').authenticate(token)
+end, {
+  nargs = "?",
+  desc = "Authenticate with Lichess (provide token or will prompt)"
+})
+
+vim.api.nvim_create_user_command("ChessLogout", function()
+  require('nvim-chess').logout()
+end, {
+  desc = "Logout from Lichess"
+})
+
+vim.api.nvim_create_user_command("ChessStatus", function()
+  require('nvim-chess').status()
+end, {
+  desc = "Show authentication status"
 })

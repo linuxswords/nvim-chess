@@ -52,9 +52,10 @@ end
 
 -- Get next training puzzle
 function M.get_next_puzzle()
+  -- Note: /api/puzzle/next works without authentication,
+  -- but authenticated users get puzzles matched to their rating
   if not auth.is_authenticated() then
-    vim.notify("Authentication required for puzzle training", vim.log.levels.ERROR)
-    return false
+    vim.notify("Getting random puzzle (authenticate for rating-matched puzzles)", vim.log.levels.WARN)
   end
 
   local puzzle_data, error = api.get_next_puzzle()

@@ -8,13 +8,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- None
+- Authentication commands for easier token management
+  - `:ChessAuthenticate [token]` - Smart authentication (uses configured token by default, prompts if none, or uses provided token)
+  - `:ChessStatus` - Show current authentication status
+  - `:ChessLogout` - Logout from Lichess
+- Smart token detection in `:ChessAuthenticate`:
+  1. Uses provided token if given as argument
+  2. Uses configured token from setup if available
+  3. Prompts interactively if no token configured
+- Token validation with immediate feedback showing username
+- Comprehensive authentication guide (AUTHENTICATION_GUIDE.md)
 
 ### Changed
-- None
+- `:ChessAuthenticate` now uses configured token by default (no need to re-enter)
+- Improved authentication documentation in README
+- Added `puzzle:read` to recommended token scopes
+- Setup now automatically initializes auth with configured token
 
 ### Fixed
-- None
+- `:ChessNextPuzzle` now works without authentication (returns random puzzles)
+  - Authenticated users still get rating-matched puzzles
+  - Removed incorrect authentication requirement
+  - Updated documentation to reflect correct behavior
 
 ## [0.2.0] - 2025-10-09
 
