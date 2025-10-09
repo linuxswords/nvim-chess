@@ -160,3 +160,16 @@ vim.api.nvim_create_user_command("ChessPuzzleActivity", function()
 end, {
   desc = "View your puzzle activity history (requires authentication)"
 })
+
+-- Version commands
+vim.api.nvim_create_user_command("ChessVersion", function()
+  require('nvim-chess.version').show_version()
+end, {
+  desc = "Show nvim-chess version"
+})
+
+vim.api.nvim_create_user_command("ChessInfo", function()
+  require('nvim-chess.version').show_info()
+end, {
+  desc = "Show detailed nvim-chess information"
+})

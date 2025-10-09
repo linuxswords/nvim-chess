@@ -195,6 +195,13 @@ When viewing a puzzle, use these keys:
 | `:ChessGetPuzzle {id}`   | Load a specific puzzle by ID               |
 | `:ChessPuzzleActivity`   | View puzzle history (auth required)        |
 
+### Version Commands
+
+| Command                  | Description                                |
+| ------------------------ | ------------------------------------------ |
+| `:ChessVersion`          | Show plugin version                        |
+| `:ChessInfo`             | Show detailed plugin information           |
+
 ### Testing Commands
 
 | Command                | Description                                |
