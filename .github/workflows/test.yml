@@ -1,0 +1,42 @@
+name: Tests
+
+on:
+  push:
+    branches: [ master, main ]
+  pull_request:
+    branches: [ master, main ]
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        nvim-version: ['stable', 'nightly']
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Neovim ${{ matrix.nvim-version }}
+        uses: rhysd/action-setup-vim@v1
+        with:
+          neovim: true
+          version: ${{ matrix.nvim-version }}
+
+      - name: Install plenary.nvim
+        run: |
+          mkdir -p ~/.local/share/nvim/site/pack/vendor/start
+          git clone --depth 1 https://github.com/nvim-lua/plenary.nvim \
+            ~/.local/share/nvim/site/pack/vendor/start/plenary.nvim
+
+      - name: Run unit tests
+        run: make test-unit
+
+      - name: Run integration tests
+        if: ${{ secrets.LICHESS_TOKEN != '' }}
+        env:
+          LICHESS_TOKEN: ${{ secrets.LICHESS_TOKEN }}
+        run: make test-integration
+        continue-on-error: true

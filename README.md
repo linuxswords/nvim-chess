@@ -1,6 +1,6 @@
 # nvim-chess
 
-[![Tests](https://img.shields.io/badge/tests-passing-green)](https://github.com/linuxswords/nvim-chess/actions)
+[![Tests](https://github.com/linuxswords/nvim-chess/actions/workflows/test.yml/badge.svg)](https://github.com/linuxswords/nvim-chess/actions/workflows/test.yml)
 
 A Neovim plugin for playing chess on Lichess.org directly from your editor.
 
