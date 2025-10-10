@@ -5,6 +5,22 @@ All notable changes to nvim-chess will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.4] - 2025-10-10
+
+### Fixed
+
+- Puzzle board now properly updates with each move during solving
+  - Board refreshes after player's move
+  - Board updates to show opponent's response
+  - Provides real-time visual feedback throughout puzzle
+
+### Changed
+
+- Enhanced puzzle manager with UCI move application
+  - Added `apply_uci_move_to_fen()` helper function
+  - Integrated move application into `attempt_move()` workflow
+  - Improved user experience with live board visualization
+
 ## [0.3.3] - 2025-10-10
 
 ### Added
@@ -252,6 +268,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Neovim 0.7+
 - plenary.nvim
 
+[0.3.4]: https://github.com/linuxswords/nvim-chess/compare/v0.3.3...v0.3.4
 [0.3.3]: https://github.com/linuxswords/nvim-chess/compare/v0.3.2...v0.3.3
 [0.3.2]: https://github.com/linuxswords/nvim-chess/compare/v0.3.1...v0.3.2
 [0.3.1]: https://github.com/linuxswords/nvim-chess/compare/v0.3.0...v0.3.1
