@@ -5,6 +5,28 @@ All notable changes to nvim-chess will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.5] - 2025-10-10
+
+### Fixed
+
+- Puzzle board now updates correctly when pressing 'n' to load next puzzle
+  - Previously, each new puzzle created a new split window
+  - Windows would accumulate, cluttering the interface
+  - Board would not refresh to show the new puzzle position
+- Window management improvements for puzzle navigation
+  - Detects when user is in a puzzle buffer
+  - Reuses current window for next puzzle instead of creating splits
+  - Maintains smooth workflow when solving multiple puzzles in sequence
+
+### Added
+
+- Test coverage reporting with LuaCov and Codecov
+  - Coverage badge in README showing test coverage percentage
+  - GitHub Actions workflow generates and uploads coverage reports
+  - Local coverage generation with `make coverage` command
+  - Coverage configuration in `.luacov` file
+  - Updated CI documentation with coverage instructions
+
 ## [0.3.4] - 2025-10-10
 
 ### Fixed
@@ -268,6 +290,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Neovim 0.7+
 - plenary.nvim
 
+[0.3.5]: https://github.com/linuxswords/nvim-chess/compare/v0.3.4...v0.3.5
 [0.3.4]: https://github.com/linuxswords/nvim-chess/compare/v0.3.3...v0.3.4
 [0.3.3]: https://github.com/linuxswords/nvim-chess/compare/v0.3.2...v0.3.3
 [0.3.2]: https://github.com/linuxswords/nvim-chess/compare/v0.3.1...v0.3.2
