@@ -229,15 +229,15 @@ end
 
 -- Puzzle operations
 function M.get_daily_puzzle()
-  return make_request('GET', '/api/puzzle/daily')
+  return make_request('GET', '/puzzle/daily')
 end
 
 function M.get_next_puzzle()
-  return make_request('GET', '/api/puzzle/next')
+  return make_request('GET', '/puzzle/next')
 end
 
 function M.get_puzzle(puzzle_id)
-  return make_request('GET', '/api/puzzle/' .. puzzle_id)
+  return make_request('GET', '/puzzle/' .. puzzle_id)
 end
 
 function M.get_puzzle_activity(max, before)
@@ -249,12 +249,12 @@ function M.get_puzzle_activity(max, before)
     table.insert(params, 'before=' .. tostring(before))
   end
   local query = #params > 0 and ('?' .. table.concat(params, '&')) or ''
-  return make_request('GET', '/api/puzzle/activity' .. query)
+  return make_request('GET', '/puzzle/activity' .. query)
 end
 
 function M.get_puzzle_dashboard(days)
   local query = days and ('?days=' .. tostring(days)) or ''
-  return make_request('GET', '/api/puzzle/dashboard' .. query)
+  return make_request('GET', '/puzzle/dashboard' .. query)
 end
 
 return M
