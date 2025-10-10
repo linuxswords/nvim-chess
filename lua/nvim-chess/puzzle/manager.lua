@@ -8,15 +8,36 @@ local auth = require('nvim-chess.auth.manager')
 local current_puzzle = nil
 local puzzle_history = {}
 
+-- Helper function to get FEN from game PGN
+-- Since Lichess API doesn't provide FEN directly, we construct it from the game
+local function get_fen_from_game(game_data, initial_ply)
+  -- For now, we'll use a workaround: fetch FEN from Lichess game viewer
+  -- The game ID and ply can be used to construct a URL
+  if game_data and game_data.id then
+    -- Try to use the game export API with FEN
+    local game_url = string.format("https://lichess.org/%s?ply=%d", game_data.id, initial_ply or 0)
+    -- Note: This is a simplified approach. In production, you'd want to:
+    -- 1. Parse the PGN moves
+    -- 2. Play them out on a board representation
+    -- 3. Generate FEN from that position
+    -- For now, we'll return nil and handle it gracefully
+    return nil
+  end
+  return nil
+end
+
 -- Parse puzzle data and prepare for display
-local function parse_puzzle(puzzle_data)
+local function parse_puzzle(puzzle_data, game_data)
   if not puzzle_data then
     return nil
   end
 
+  -- Get FEN - try from puzzle data first, then from game
+  local fen = puzzle_data.fen or get_fen_from_game(game_data, puzzle_data.initialPly)
+
   return {
     id = puzzle_data.id,
-    fen = puzzle_data.fen,
+    fen = fen,
     rating = puzzle_data.rating,
     plays = puzzle_data.plays,
     themes = puzzle_data.themes or {},
@@ -25,7 +46,9 @@ local function parse_puzzle(puzzle_data)
     current_move_index = 0,
     moves_made = {},
     completed = false,
-    success = nil
+    success = nil,
+    pgn = game_data and game_data.pgn,
+    game_id = game_data and game_data.id
   }
 end
 
@@ -39,8 +62,7 @@ function M.get_daily_puzzle()
   end
 
   if puzzle_data and puzzle_data.puzzle then
-    current_puzzle = parse_puzzle(puzzle_data.puzzle)
-    current_puzzle.game = puzzle_data.game -- Include game context
+    current_puzzle = parse_puzzle(puzzle_data.puzzle, puzzle_data.game)
 
     vim.notify(string.format("Daily Puzzle (Rating: %d)", current_puzzle.rating), vim.log.levels.INFO)
     M.show_puzzle()
@@ -66,8 +88,7 @@ function M.get_next_puzzle()
   end
 
   if puzzle_data and puzzle_data.puzzle then
-    current_puzzle = parse_puzzle(puzzle_data.puzzle)
-    current_puzzle.game = puzzle_data.game
+    current_puzzle = parse_puzzle(puzzle_data.puzzle, puzzle_data.game)
 
     local themes_str = table.concat(current_puzzle.themes, ", ")
     vim.notify(string.format("Puzzle (Rating: %d) - Themes: %s",
@@ -90,8 +111,7 @@ function M.get_puzzle(puzzle_id)
   end
 
   if puzzle_data and puzzle_data.puzzle then
-    current_puzzle = parse_puzzle(puzzle_data.puzzle)
-    current_puzzle.game = puzzle_data.game
+    current_puzzle = parse_puzzle(puzzle_data.puzzle, puzzle_data.game)
 
     vim.notify(string.format("Puzzle %s (Rating: %d)", puzzle_id, current_puzzle.rating), vim.log.levels.INFO)
     M.show_puzzle()
@@ -145,7 +165,7 @@ function M.show_puzzle()
 
   -- Render board using existing UI module
   local board_fen = current_puzzle.fen
-  local board = ui.parse_fen_position(board_fen)
+  local board = board_fen and ui.parse_fen_position(board_fen)
 
   if board then
     -- Render board - flip if black to move
@@ -188,7 +208,20 @@ function M.show_puzzle()
       table.insert(info_lines, line)
     end
   else
-    table.insert(info_lines, "FEN: " .. board_fen)
+    -- FEN not available - show link to puzzle on Lichess
+    table.insert(info_lines, "")
+    table.insert(info_lines, "⚠ Board display not available")
+    table.insert(info_lines, "")
+    if current_puzzle.game_id then
+      table.insert(info_lines, "View puzzle on Lichess:")
+      table.insert(info_lines, string.format("https://lichess.org/training/%s", current_puzzle.id))
+      table.insert(info_lines, "")
+      if current_puzzle.pgn then
+        table.insert(info_lines, "PGN: " .. current_puzzle.pgn)
+      end
+    else
+      table.insert(info_lines, "FEN not available from API")
+    end
   end
 
   table.insert(info_lines, "")
