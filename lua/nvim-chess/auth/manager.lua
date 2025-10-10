@@ -22,14 +22,14 @@ function M.validate_token()
   end
 
   local api = require('nvim-chess.api.client')
-  local profile, error = api.get_profile()
+  local account, error = api.get_account()
 
   if error then
     return false, error
   end
 
-  if profile then
-    user_profile = profile
+  if account then
+    user_profile = account
     return true, nil
   end
 

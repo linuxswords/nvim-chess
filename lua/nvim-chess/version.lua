@@ -1,9 +1,9 @@
 local M = {}
 
 -- Plugin version information
-M.version = "0.3.5"
+M.version = "0.4.0"
 M.name = "nvim-chess"
-M.description = "A Neovim plugin for playing chess on Lichess.org"
+M.description = "A Neovim plugin for solving chess puzzles from Lichess.org"
 M.author = "linuxswords"
 M.homepage = "https://github.com/linuxswords/nvim-chess"
 M.license = "MIT"

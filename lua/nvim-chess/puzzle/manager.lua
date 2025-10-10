@@ -1,11 +1,49 @@
 local M = {}
 
 local api = require('nvim-chess.api.client')
-local ui = require('nvim-chess.ui.board')
 local auth = require('nvim-chess.auth.manager')
 local pgn_converter = require('nvim-chess.chess.pgn_converter')
 local engine = require('nvim-chess.chess.engine')
 local move_executor = require('nvim-chess.chess.move_executor')
+
+-- Helper function to parse FEN position (replaces ui.board dependency)
+local function parse_fen_position(fen)
+  if not fen then return nil end
+
+  local parts = {}
+  for part in fen:gmatch("%S+") do
+    table.insert(parts, part)
+  end
+
+  if #parts < 1 then return nil end
+
+  local position = parts[1]
+  local board = {}
+
+  local rank = 8
+  for rank_str in position:gmatch("[^/]+") do
+    board[rank] = {}
+    local file = 1
+
+    for char in rank_str:gmatch(".") do
+      if char:match("%d") then
+        file = file + tonumber(char)
+      else
+        local color = char:match("[KQRBNP]") and "white" or "black"
+        local piece_map = {
+          K = "king", Q = "queen", R = "rook", B = "bishop", N = "knight", P = "pawn",
+          k = "king", q = "queen", r = "rook", b = "bishop", n = "knight", p = "pawn"
+        }
+        board[rank][file] = { type = piece_map[char], color = color }
+        file = file + 1
+      end
+    end
+
+    rank = rank - 1
+  end
+
+  return board
+end
 
 -- Active puzzle storage
 local current_puzzle = nil
@@ -284,9 +322,9 @@ function M.show_puzzle()
     "",
   }
 
-  -- Render board using existing UI module
+  -- Render board
   local board_fen = current_puzzle.fen
-  local board = board_fen and ui.parse_fen_position(board_fen)
+  local board = board_fen and parse_fen_position(board_fen)
 
   if board then
     -- Render board - flip if black to move
