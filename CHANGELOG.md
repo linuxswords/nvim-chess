@@ -5,7 +5,32 @@ All notable changes to nvim-chess will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## 0.3.0 - 10.10.2025
+## [0.3.1] - 2025-10-10
+
+### Added
+
+- GitHub Actions CI workflow for automated testing
+  - Tests run on Neovim stable and nightly
+  - Automatic execution on push and pull requests
+  - Matrix strategy for version compatibility testing
+  - Optional integration tests with Lichess token
+- Dynamic test status badge in README
+  - Real-time test status from GitHub Actions
+  - Links to workflow runs
+- CI documentation (`.github/CI.md`)
+  - Workflow explanation and troubleshooting guide
+  - Badge setup instructions
+  - Local testing commands
+
+### Fixed
+
+- Puzzle API endpoints returning 404 errors
+  - Removed duplicate `/api` prefix from puzzle endpoints
+  - Fixed `/puzzle/daily`, `/puzzle/next`, `/puzzle/{id}`, `/puzzle/activity`
+  - All puzzle operations now work correctly
+  - Verified all 20 API endpoints for correct formatting
+
+## [0.3.0] - 2025-10-10
 
 ### Added
 
@@ -152,5 +177,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Neovim 0.7+
 - plenary.nvim
 
+[0.3.1]: https://github.com/linuxswords/nvim-chess/compare/v0.3.0...v0.3.1
+[0.3.0]: https://github.com/linuxswords/nvim-chess/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/linuxswords/nvim-chess/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/linuxswords/nvim-chess/releases/tag/v0.1.0
