@@ -3,27 +3,29 @@ local M = {}
 local api = require('nvim-chess.api.client')
 local ui = require('nvim-chess.ui.board')
 local auth = require('nvim-chess.auth.manager')
+local pgn_converter = require('nvim-chess.chess.pgn_converter')
 
 -- Active puzzle storage
 local current_puzzle = nil
 local puzzle_history = {}
 
 -- Helper function to get FEN from game PGN
--- Since Lichess API doesn't provide FEN directly, we construct it from the game
+-- Converts PGN moves to FEN at the puzzle's starting position
 local function get_fen_from_game(game_data, initial_ply)
-  -- For now, we'll use a workaround: fetch FEN from Lichess game viewer
-  -- The game ID and ply can be used to construct a URL
-  if game_data and game_data.id then
-    -- Try to use the game export API with FEN
-    local game_url = string.format("https://lichess.org/%s?ply=%d", game_data.id, initial_ply or 0)
-    -- Note: This is a simplified approach. In production, you'd want to:
-    -- 1. Parse the PGN moves
-    -- 2. Play them out on a board representation
-    -- 3. Generate FEN from that position
-    -- For now, we'll return nil and handle it gracefully
+  if not game_data or not game_data.pgn then
     return nil
   end
-  return nil
+
+  -- Convert PGN to FEN at the puzzle's starting position (initialPly)
+  local fen, err = pgn_converter.pgn_to_fen(game_data.pgn, initial_ply or 0)
+
+  if not fen then
+    vim.notify("Warning: Could not generate FEN from PGN: " .. (err or "unknown error"),
+      vim.log.levels.WARN)
+    return nil
+  end
+
+  return fen
 end
 
 -- Parse puzzle data and prepare for display
