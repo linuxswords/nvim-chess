@@ -9,9 +9,51 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Ability to show the board on puzzle view
-  - PNG to FEN parser
-  - comprehenrive tests
+- Full PGN-to-FEN conversion system for puzzle board display
+  - Custom chess engine implementation (`lua/nvim-chess/chess/engine.lua`)
+    - Board state representation and management
+    - FEN parsing and generation
+    - Helper functions for piece manipulation
+  - SAN (Standard Algebraic Notation) move parser (`lua/nvim-chess/chess/san_parser.lua`)
+    - Supports all chess move types: pawn moves, piece moves, captures, castling, promotion
+    - Disambiguation handling (Nbd2, R1a3, etc.)
+    - Move legality checking
+  - Move execution engine (`lua/nvim-chess/chess/move_executor.lua`)
+    - Execute moves on board state
+    - Special move handling: castling, en passant, promotion
+    - Castling rights and game state updates
+  - PGN converter module (`lua/nvim-chess/chess/pgn_converter.lua`)
+    - Convert Lichess PGN to FEN at any ply
+    - PGN validation and parsing
+    - Support for full game position lists
+- Dynamic puzzle board updates
+  - Board automatically refreshes after each player move
+  - Board updates to show opponent's response moves
+  - Full visual progression through puzzle solutions
+  - Real-time FEN updates with UCI move application
+- 62 new comprehensive tests (120 total tests now, all passing)
+  - Chess engine tests (16 tests)
+  - SAN parsing and move execution tests (24 tests)
+  - PGN-to-FEN conversion tests (22 tests)
+  - Tested with real Lichess puzzle data
+  - Edge case coverage: castling, en passant, promotion, captures
+
+### Fixed
+
+- Puzzle board now displays correctly for all Lichess puzzles
+  - Generates FEN from PGN moves provided by Lichess API
+  - No more "Board display not available" warnings
+- Puzzle board updates with each move during solving
+  - Previously showed only starting position throughout puzzle
+  - Now updates after player moves and opponent responses
+  - Provides full visual feedback during puzzle solving
+
+### Changed
+
+- Updated puzzle manager to use PGN-to-FEN conversion
+  - Integrated chess engine for position generation
+  - Added UCI move application for board updates
+  - Enhanced puzzle solving experience with live board updates
 
 ## [0.3.2] - 2025-10-10
 
