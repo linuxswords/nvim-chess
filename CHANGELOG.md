@@ -5,6 +5,31 @@ All notable changes to nvim-chess will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.2] - 2025-10-10
+
+### Fixed
+
+- ChessNextPuzzle command error due to missing FEN in Lichess API response
+  - Lichess puzzle endpoints don't provide FEN field in responses
+  - Updated puzzle manager to handle missing FEN gracefully
+  - Shows puzzle info with Lichess training link when FEN unavailable
+  - Puzzle solving functionality works without board display
+
+### Added
+
+- 5 new tests for missing FEN handling (58 total tests now)
+  - Tests API response structure without FEN field
+  - Tests graceful handling of nil FEN in board display
+  - Tests fallback information display
+  - Tests puzzle functionality without board rendering
+  - All tests passing
+
+### Changed
+
+- Updated puzzle parser to accept game data for future FEN extraction
+- Enhanced show_puzzle to display helpful message when board unavailable
+- Stores PGN and game ID for potential future PGN-to-FEN conversion
+
 ## [0.3.1] - 2025-10-10
 
 ### Added
@@ -177,6 +202,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Neovim 0.7+
 - plenary.nvim
 
+[0.3.2]: https://github.com/linuxswords/nvim-chess/compare/v0.3.1...v0.3.2
 [0.3.1]: https://github.com/linuxswords/nvim-chess/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/linuxswords/nvim-chess/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/linuxswords/nvim-chess/compare/v0.1.0...v0.2.0
