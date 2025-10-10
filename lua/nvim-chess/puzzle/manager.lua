@@ -4,6 +4,8 @@ local api = require('nvim-chess.api.client')
 local ui = require('nvim-chess.ui.board')
 local auth = require('nvim-chess.auth.manager')
 local pgn_converter = require('nvim-chess.chess.pgn_converter')
+local engine = require('nvim-chess.chess.engine')
+local move_executor = require('nvim-chess.chess.move_executor')
 
 -- Active puzzle storage
 local current_puzzle = nil
@@ -26,6 +28,123 @@ local function get_fen_from_game(game_data, initial_ply)
   end
 
   return fen
+end
+
+-- Helper function to apply a UCI move to the current puzzle FEN
+-- Returns updated FEN or nil on error
+local function apply_uci_move_to_fen(fen, uci_move)
+  if not fen or not uci_move then
+    return nil
+  end
+
+  -- Parse current FEN into board state
+  local board_state, err = engine.create_board_from_fen(fen)
+  if not board_state then
+    return nil, "Failed to parse FEN: " .. (err or "unknown error")
+  end
+
+  -- Convert UCI to SAN-like format for move executor
+  -- UCI format: e2e4, e7e8q (source square + dest square + optional promotion)
+  -- We need to convert this to SAN for the move executor
+
+  -- For now, we'll use a simpler approach: directly manipulate the board
+  local from_square = uci_move:sub(1, 2)
+  local to_square = uci_move:sub(3, 4)
+  local promotion = uci_move:sub(5, 5)
+
+  local from_file = engine.letter_to_file(from_square:sub(1, 1))
+  local from_rank = tonumber(from_square:sub(2, 2))
+  local to_file = engine.letter_to_file(to_square:sub(1, 1))
+  local to_rank = tonumber(to_square:sub(2, 2))
+
+  -- Get the piece being moved
+  local piece = board_state.position[from_rank][from_file]
+  if not piece then
+    return nil, "No piece at " .. from_square
+  end
+
+  -- Check for en passant capture
+  local is_en_passant = false
+  if piece.type == "pawn" and to_square == board_state.en_passant then
+    is_en_passant = true
+    local capture_rank = piece.color == "white" and to_rank - 1 or to_rank + 1
+    board_state.position[capture_rank][to_file] = nil
+  end
+
+  -- Move the piece
+  board_state.position[to_rank][to_file] = piece
+  board_state.position[from_rank][from_file] = nil
+
+  -- Handle promotion
+  if promotion and promotion ~= "" then
+    local promo_map = {q = "queen", r = "rook", b = "bishop", n = "knight"}
+    board_state.position[to_rank][to_file].type = promo_map[promotion]
+  end
+
+  -- Handle castling
+  if piece.type == "king" and math.abs(to_file - from_file) == 2 then
+    -- Kingside castling
+    if to_file > from_file then
+      local rook = board_state.position[from_rank][8]
+      board_state.position[from_rank][6] = rook
+      board_state.position[from_rank][8] = nil
+    else
+      -- Queenside castling
+      local rook = board_state.position[from_rank][1]
+      board_state.position[from_rank][4] = rook
+      board_state.position[from_rank][1] = nil
+    end
+  end
+
+  -- Update castling rights
+  if piece.type == "king" then
+    if piece.color == "white" then
+      board_state.castling.white_kingside = false
+      board_state.castling.white_queenside = false
+    else
+      board_state.castling.black_kingside = false
+      board_state.castling.black_queenside = false
+    end
+  elseif piece.type == "rook" then
+    if piece.color == "white" and from_rank == 1 then
+      if from_file == 1 then
+        board_state.castling.white_queenside = false
+      elseif from_file == 8 then
+        board_state.castling.white_kingside = false
+      end
+    elseif piece.color == "black" and from_rank == 8 then
+      if from_file == 1 then
+        board_state.castling.black_queenside = false
+      elseif from_file == 8 then
+        board_state.castling.black_kingside = false
+      end
+    end
+  end
+
+  -- Update en passant target square
+  board_state.en_passant = nil
+  if piece.type == "pawn" and math.abs(to_rank - from_rank) == 2 then
+    local ep_rank = piece.color == "white" and from_rank + 1 or from_rank - 1
+    board_state.en_passant = engine.indices_to_square(ep_rank, from_file)
+  end
+
+  -- Update move counters
+  if piece.type == "pawn" or is_en_passant then
+    board_state.halfmove = 0
+  else
+    board_state.halfmove = board_state.halfmove + 1
+  end
+
+  -- Update fullmove number
+  if board_state.to_move == "black" then
+    board_state.fullmove = board_state.fullmove + 1
+  end
+
+  -- Switch turn
+  board_state.to_move = board_state.to_move == "white" and "black" or "white"
+
+  -- Generate new FEN
+  return engine.board_to_fen(board_state)
 end
 
 -- Parse puzzle data and prepare for display
@@ -301,6 +420,17 @@ function M.attempt_move(move)
     current_puzzle.current_move_index = current_puzzle.current_move_index + 1
     table.insert(current_puzzle.moves_made, move)
 
+    -- Update the FEN with the move
+    local new_fen, err = apply_uci_move_to_fen(current_puzzle.fen, move)
+    if new_fen then
+      current_puzzle.fen = new_fen
+    else
+      vim.notify("Warning: Could not update board: " .. (err or "unknown error"), vim.log.levels.WARN)
+    end
+
+    -- Refresh the board display
+    M.show_puzzle()
+
     if current_puzzle.current_move_index >= #current_puzzle.solution then
       -- Puzzle solved!
       current_puzzle.completed = true
@@ -321,8 +451,20 @@ function M.attempt_move(move)
       vim.notify("✓ Correct! Continue...", vim.log.levels.INFO)
       -- Auto-play opponent's response if available
       if current_puzzle.current_move_index < #current_puzzle.solution then
-        vim.notify("Opponent plays: " .. current_puzzle.solution[current_puzzle.current_move_index + 1], vim.log.levels.INFO)
+        local opponent_move = current_puzzle.solution[current_puzzle.current_move_index + 1]
+        vim.notify("Opponent plays: " .. opponent_move, vim.log.levels.INFO)
         current_puzzle.current_move_index = current_puzzle.current_move_index + 1
+
+        -- Update FEN with opponent's move
+        local opponent_fen, opponent_err = apply_uci_move_to_fen(current_puzzle.fen, opponent_move)
+        if opponent_fen then
+          current_puzzle.fen = opponent_fen
+        else
+          vim.notify("Warning: Could not update board with opponent move: " .. (opponent_err or "unknown error"), vim.log.levels.WARN)
+        end
+
+        -- Refresh board to show opponent's move
+        M.show_puzzle()
       end
     end
   else
