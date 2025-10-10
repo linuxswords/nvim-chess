@@ -354,12 +354,24 @@ function M.show_puzzle()
   vim.api.nvim_buf_set_lines(buf, 0, -1, false, info_lines)
   vim.api.nvim_buf_set_option(buf, 'modifiable', false)
 
-  -- Open in new window if not already visible
+  -- Check if we're already in a puzzle buffer and reuse that window
+  local current_buf_name = vim.api.nvim_buf_get_name(vim.api.nvim_get_current_buf())
+  local in_puzzle_buffer = current_buf_name:match("^puzzle%-")
+
+  -- Open in new window if not already visible, otherwise reuse current window if it's a puzzle
   local win = vim.fn.bufwinid(buf)
   if win == -1 then
-    vim.cmd('split')
-    vim.api.nvim_win_set_buf(0, buf)
+    -- Buffer not visible anywhere
+    if in_puzzle_buffer then
+      -- We're in a puzzle buffer, reuse current window
+      vim.api.nvim_win_set_buf(0, buf)
+    else
+      -- Not in a puzzle buffer, create new split
+      vim.cmd('split')
+      vim.api.nvim_win_set_buf(0, buf)
+    end
   else
+    -- Buffer is already visible, switch to it
     vim.api.nvim_set_current_win(win)
   end
 
