@@ -5,9 +5,10 @@ All notable changes to nvim-chess will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## 0.3.0 - 10.10.2025
 
 ### Added
+
 - Authentication commands for easier token management
   - `:ChessAuthenticate [token]` - Smart authentication (uses configured token by default, prompts if none, or uses provided token)
   - `:ChessStatus` - Show current authentication status
@@ -20,12 +21,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Comprehensive authentication guide (AUTHENTICATION_GUIDE.md)
 
 ### Changed
+
 - `:ChessAuthenticate` now uses configured token by default (no need to re-enter)
 - Improved authentication documentation in README
 - Added `puzzle:read` to recommended token scopes
 - Setup now automatically initializes auth with configured token
 
 ### Fixed
+
 - `:ChessNextPuzzle` now works without authentication (returns random puzzles)
   - Authenticated users still get rating-matched puzzles
   - Removed incorrect authentication requirement
@@ -34,6 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.2.0] - 2025-10-09
 
 ### Added
+
 - Chess puzzle solving functionality
   - Daily puzzle support (no authentication required)
   - Training puzzle mode with rating-based matching (requires authentication)
@@ -68,17 +72,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Version tracking system
 
 ### Changed
+
 - Updated README with puzzle features and usage documentation
 - Extended API client with puzzle endpoints
 - Exported `parse_fen_position()` from UI board module for puzzle rendering
 - Added puzzle controls to interactive UI
 
 ### Fixed
+
 - None
 
 ## [0.1.0] - 2025-10-08
 
 ### Added
+
 - Initial release of nvim-chess
 - Play chess games on Lichess.org
 - Real-time game updates via streaming API
@@ -141,9 +148,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `<C-r>` - Refresh board
 
 ### Dependencies
+
 - Neovim 0.7+
 - plenary.nvim
 
-[Unreleased]: https://github.com/linuxswords/nvim-chess/compare/v0.2.0...HEAD
 [0.2.0]: https://github.com/linuxswords/nvim-chess/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/linuxswords/nvim-chess/releases/tag/v0.1.0
