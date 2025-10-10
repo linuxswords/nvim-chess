@@ -118,9 +118,16 @@ coverage:
 		exit 1; \
 	fi
 	@rm -f luacov.*.out
-	@nvim --headless -c "lua package.path='lua/?.lua;lua/?/init.lua;'..package.path" \
-		-c "lua require('luacov')" \
-		-c "PlenaryBustedDirectory test/ --exclude=integration" -c "qa" || true
+	@nvim --headless \
+		-c "lua package.path='lua/?.lua;lua/?/init.lua;'..package.path" \
+		-c "luafile .luacov_runner.lua" \
+		-c "PlenaryBustedDirectory test/ --exclude=integration" \
+		-c "qa" || true
+	@if [ ! -f luacov.stats.out ]; then \
+		echo "❌ Coverage stats file not generated"; \
+		echo "   This may indicate LuaCov is not properly loaded"; \
+		exit 1; \
+	fi
 	@luacov
 	@echo ""
 	@echo "Coverage report generated: luacov.report.out"
