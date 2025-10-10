@@ -1,0 +1,31 @@
+-- LuaCov configuration file
+-- Generate coverage reports for nvim-chess
+
+return {
+  -- Where to store stats file
+  statsfile = "luacov.stats.out",
+
+  -- Where to write report
+  reportfile = "luacov.report.out",
+
+  -- Delete stats file after reporting
+  deletestats = false,
+
+  -- Patterns for files to include
+  include = {
+    "lua/nvim%-chess",
+  },
+
+  -- Patterns for files to exclude
+  exclude = {
+    "lua/nvim%-chess/test%-utils",  -- Exclude test utilities
+    "test/",  -- Exclude test files
+  },
+
+  -- Run reporter on completion
+  runreport = true,
+
+  -- Coverage reporter type
+  -- Use default reporter (text-based)
+  -- Can be changed to 'cobertura' for XML output
+}

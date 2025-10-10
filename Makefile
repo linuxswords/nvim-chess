@@ -1,6 +1,6 @@
 # Makefile for nvim-chess development
 
-.PHONY: test test-unit test-integration demo lint format install-deps help
+.PHONY: test test-unit test-integration demo lint format install-deps help coverage
 
 # Default target
 help:
@@ -12,6 +12,7 @@ help:
 	@echo "  test-unit      - Run unit tests only"
 	@echo "  test-integration - Run integration tests (requires LICHESS_TOKEN)"
 	@echo "  test-demo      - Run demo tests"
+	@echo "  coverage       - Run tests with coverage report (requires luacov)"
 	@echo "  demo           - Run interactive demo"
 	@echo ""
 	@echo "Development:"
@@ -108,10 +109,30 @@ install-deps:
 	@echo "3. Optional: Install stylua for formatting (cargo install stylua)"
 	@echo "4. Optional: Install luacheck for linting (luarocks install luacheck)"
 
+# Run tests with coverage
+coverage:
+	@echo "Running tests with coverage..."
+	@if ! command -v luacov >/dev/null 2>&1; then \
+		echo "❌ luacov not found"; \
+		echo "   Install with: luarocks install luacov"; \
+		exit 1; \
+	fi
+	@rm -f luacov.*.out
+	@nvim --headless -c "lua package.path='lua/?.lua;lua/?/init.lua;'..package.path" \
+		-c "lua require('luacov')" \
+		-c "PlenaryBustedDirectory test/ --exclude=integration" -c "qa" || true
+	@luacov
+	@echo ""
+	@echo "Coverage report generated: luacov.report.out"
+	@echo ""
+	@echo "Coverage summary:"
+	@grep -A 100 "^Summary" luacov.report.out | head -20 || echo "See luacov.report.out for details"
+
 # Clean up test artifacts
 clean:
 	@echo "Cleaning up test artifacts..."
 	@find . -name "*.tmp" -delete 2>/dev/null || true
+	@rm -f luacov.*.out
 
 # Development server (interactive testing)
 dev:

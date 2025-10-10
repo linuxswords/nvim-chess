@@ -21,21 +21,29 @@ Tests run on:
 1. **Checkout code** - Uses `actions/checkout@v4`
 2. **Install Neovim** - Uses `rhysd/action-setup-vim@v1` for specified version
 3. **Install plenary.nvim** - Clones dependency into Neovim package path
-4. **Run unit tests** - Executes `make test-unit` (53 tests)
-5. **Run integration tests** (optional) - Runs `make test-integration` if `LICHESS_TOKEN` secret is configured
+4. **Install LuaRocks and LuaCov** - Installs coverage tools
+5. **Run unit tests** - Executes `make test-unit` (120 tests)
+6. **Run tests with coverage** - Generates coverage report (stable version only)
+7. **Upload coverage to Codecov** - Uploads coverage data for tracking
+8. **Run integration tests** (optional) - Runs `make test-integration` if `LICHESS_TOKEN` secret is configured
 
 ### Test Badge
 
-The README displays a dynamic badge showing the current test status:
+The README displays dynamic badges showing test and coverage status:
 
 ```markdown
 [![Tests](https://github.com/linuxswords/nvim-chess/actions/workflows/test.yml/badge.svg)](https://github.com/linuxswords/nvim-chess/actions/workflows/test.yml)
+[![codecov](https://codecov.io/gh/linuxswords/nvim-chess/branch/master/graph/badge.svg)](https://codecov.io/gh/linuxswords/nvim-chess)
 ```
 
-Badge states:
+Test badge states:
 - ✅ Green "passing" - All tests passed
 - ❌ Red "failing" - Some tests failed
 - 🟡 Yellow "no status" - Workflow hasn't run yet (wait ~10 minutes after first push)
+
+Coverage badge shows:
+- Percentage of code covered by tests
+- Green for good coverage (>70%), yellow for medium (40-70%), red for low (<40%)
 
 ## Local Testing
 
@@ -45,10 +53,34 @@ Before pushing, run the same tests locally:
 # Run unit tests (what CI runs)
 make test-unit
 
+# Run tests with coverage
+make coverage
+
 # Run all tests including integration (requires LICHESS_TOKEN)
 export LICHESS_TOKEN=your_token_here
 make test-all
 ```
+
+### Coverage Reports
+
+The coverage target generates a detailed coverage report:
+
+```bash
+make coverage
+```
+
+This will:
+1. Install LuaCov if needed (`luarocks install luacov`)
+2. Run all unit tests with coverage tracking
+3. Generate `luacov.report.out` with line-by-line coverage data
+4. Display a summary of coverage percentages
+
+View the full report:
+```bash
+cat luacov.report.out
+```
+
+Coverage configuration is in `.luacov` and excludes test utilities and test files themselves.
 
 ## Integration Tests
 
