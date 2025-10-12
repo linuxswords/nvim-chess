@@ -208,6 +208,18 @@ local function parse_puzzle(puzzle_data, game_data)
   -- Get FEN - try from puzzle data first, then from game
   local fen = puzzle_data.fen or get_fen_from_game(game_data, puzzle_data.initialPly)
 
+  -- Determine player color from initial FEN (the color to move at puzzle start)
+  local player_color = "White"
+  if fen then
+    local parts = {}
+    for part in fen:gmatch("%S+") do
+      table.insert(parts, part)
+    end
+    if #parts >= 2 then
+      player_color = parts[2] == "w" and "White" or "Black"
+    end
+  end
+
   return {
     id = puzzle_data.id,
     fen = fen,
@@ -221,7 +233,8 @@ local function parse_puzzle(puzzle_data, game_data)
     completed = false,
     success = nil,
     pgn = game_data and game_data.pgn,
-    game_id = game_data and game_data.id
+    game_id = game_data and game_data.id,
+    player_color = player_color  -- Track which color the player is playing as
   }
 end
 
@@ -336,9 +349,9 @@ function M.show_puzzle()
   local display_lines
 
   if board then
-    -- Render board - flip if white to move so player sees from their perspective
-    local turn = get_turn_from_fen(current_puzzle.fen)
-    local flip = (turn == "White")
+    -- Render board - flip if player is white so they see from their perspective
+    local player_color = current_puzzle.player_color or "White"
+    local flip = (player_color == "White")
     local render_board = function(board_data, should_flip)
       -- Note: Using filled symbols for white, outlined for black for better contrast
       local pieces = {
@@ -388,7 +401,7 @@ function M.show_puzzle()
       "│ Plays:  " .. string.format("%-18s", tostring(current_puzzle.plays or "N/A")) .. "│",
       "│                             │",
       "│ Task: " .. string.format("%-20s", "Find best move") .. "│",
-      "│       " .. string.format("%-20s", "for " .. turn) .. "│",
+      "│       " .. string.format("%-20s", "for " .. player_color) .. "│",
       "│                             │",
       "├─ CONTROLS ──────────────────┤",
       "│ (m) Make move               │",
