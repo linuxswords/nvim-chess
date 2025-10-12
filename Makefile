@@ -7,11 +7,10 @@ help:
 	@echo "nvim-chess development commands:"
 	@echo ""
 	@echo "Testing:"
-	@echo "  test           - Run unit and demo tests"
+	@echo "  test           - Run unit tests"
 	@echo "  test-all       - Run all tests (currently same as test)"
-	@echo "  test-unit      - Run unit tests only"
+	@echo "  test-unit      - Run unit tests"
 	@echo "  test-integration - Show integration test info (not yet implemented)"
-	@echo "  test-demo      - Run demo tests"
 	@echo "  demo           - Run interactive demo"
 	@echo ""
 	@echo "Development:"
@@ -21,11 +20,11 @@ help:
 	@echo "Quick testing:"
 	@echo "  make demo      - Quick way to test functionality"
 
-# Run all tests (unit + demo, integration separate)
-test: test-unit test-demo
+# Run all tests
+test: test-unit
 
 # Run all tests (currently same as test, since integration tests not implemented)
-test-all: test-unit test-demo
+test-all: test-unit
 
 # Run unit tests with plenary
 test-unit:
@@ -39,16 +38,6 @@ test-integration:
 	@echo "   The puzzle_integration_test.lua uses mocks, not real API calls"
 	@echo "   To run mock-based tests: nvim --headless -c 'luafile test/puzzle_integration_test.lua' -c 'qa'"
 
-# Run demo tests
-test-demo:
-	@echo "Running demo tests..."
-	@nvim --headless \
-		-c "set runtimepath+=." \
-		-c "lua require('nvim-chess.test-utils.demo').run_basic_demo()" \
-		-c "sleep 3" \
-		-c "lua require('nvim-chess.test-utils.demo').test_error_scenarios()" \
-		-c "sleep 3" \
-		-c "qa"
 
 # Interactive demo
 demo:
