@@ -8,9 +8,9 @@ help:
 	@echo ""
 	@echo "Testing:"
 	@echo "  test           - Run unit and demo tests"
-	@echo "  test-all       - Run all tests including integration"
+	@echo "  test-all       - Run all tests (currently same as test)"
 	@echo "  test-unit      - Run unit tests only"
-	@echo "  test-integration - Run integration tests (requires LICHESS_TOKEN)"
+	@echo "  test-integration - Show integration test info (not yet implemented)"
 	@echo "  test-demo      - Run demo tests"
 	@echo "  demo           - Run interactive demo"
 	@echo ""
@@ -25,8 +25,8 @@ help:
 # Run all tests (unit + demo, integration separate)
 test: test-unit test-demo
 
-# Run all tests including integration (requires LICHESS_TOKEN)
-test-all: test-unit test-integration test-demo
+# Run all tests (currently same as test, since integration tests not implemented)
+test-all: test-unit test-demo
 
 # Run unit tests with plenary
 test-unit:
@@ -34,16 +34,11 @@ test-unit:
 	@nvim --headless -c "PlenaryBustedDirectory test/ --exclude=integration" -c "qa"
 
 # Run integration tests (requires LICHESS_TOKEN)
+# Note: Real API integration tests are not yet implemented for the puzzle-focused version
 test-integration:
-	@echo "Running integration tests..."
-	@if [ -z "$$LICHESS_TOKEN" ]; then \
-		echo "❌ LICHESS_TOKEN environment variable not set"; \
-		echo "   Set it with: export LICHESS_TOKEN=your_token_here"; \
-		echo "   Get token from: https://lichess.org/account/oauth/token"; \
-		exit 1; \
-	fi
-	@echo "✅ LICHESS_TOKEN found, running integration tests..."
-	@nvim --headless -c "PlenaryBustedFile test/integration_spec.lua" -c "qa"
+	@echo "⚠️  Real API integration tests not yet implemented"
+	@echo "   The puzzle_integration_test.lua uses mocks, not real API calls"
+	@echo "   To run mock-based tests: nvim --headless -c 'luafile test/puzzle_integration_test.lua' -c 'qa'"
 
 # Run demo tests
 test-demo:
