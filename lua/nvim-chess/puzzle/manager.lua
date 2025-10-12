@@ -338,9 +338,9 @@ function M.show_puzzle()
   local display_lines
 
   if board then
-    -- Render board - flip if black to move (determine from FEN)
+    -- Render board - flip if white to move so player sees from their perspective
     local turn = get_turn_from_fen(current_puzzle.fen)
-    local flip = (turn == "Black")
+    local flip = (turn == "White")
     local render_board = function(board_data, should_flip)
       -- Note: Using filled symbols for white, outlined for black for better contrast
       local pieces = {
