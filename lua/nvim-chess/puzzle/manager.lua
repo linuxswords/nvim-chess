@@ -6,6 +6,20 @@ local pgn_converter = require('nvim-chess.chess.pgn_converter')
 local engine = require('nvim-chess.chess.engine')
 local move_executor = require('nvim-chess.chess.move_executor')
 
+-- Constants for player colors based on ply
+local PLY_WHITE = 0  -- Even ply numbers indicate white to move
+local PLY_BLACK = 1  -- Odd ply numbers indicate black to move
+
+-- Helper function to determine which player moves at a given ply
+local function get_player_from_ply(ply)
+  return (ply % 2 == PLY_WHITE) and "White" or "Black"
+end
+
+-- Helper function to determine if board should be flipped (black's perspective)
+local function should_flip_board(ply)
+  return (ply % 2 == PLY_BLACK)
+end
+
 -- Helper function to parse FEN position (replaces ui.board dependency)
 local function parse_fen_position(fen)
   if not fen then return nil end
@@ -315,7 +329,7 @@ function M.show_puzzle()
     "Themes:     " .. (table.concat(current_puzzle.themes, ", ") ~= "" and table.concat(current_puzzle.themes, ", ") or "None"),
     "Plays:      " .. (current_puzzle.plays or "N/A"),
     "",
-    "Task: Find the best move for " .. (current_puzzle.initial_ply % 2 == 0 and "White" or "Black"),
+    "Task: Find the best move for " .. get_player_from_ply(current_puzzle.initial_ply),
     "",
     "Controls: (m)ove | (h)int | (s)olution | (n)ext | (q)uit",
     "═══════════════════════════════════════",
@@ -328,7 +342,7 @@ function M.show_puzzle()
 
   if board then
     -- Render board - flip if black to move
-    local flip = current_puzzle.initial_ply % 2 == 1
+    local flip = should_flip_board(current_puzzle.initial_ply)
     local render_board = function(board_data, should_flip)
       local pieces = {
         white = { king = "♔", queen = "♕", rook = "♖", bishop = "♗", knight = "♘", pawn = "♙" },
