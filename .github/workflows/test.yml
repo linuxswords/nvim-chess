@@ -43,8 +43,8 @@ jobs:
       - name: Run tests with coverage
         if: matrix.nvim-version == 'stable'
         run: |
-          eval $(luarocks path)
-          make coverage
+          # Set LuaRocks paths and run coverage in same shell
+          eval $(luarocks path --no-bin) && make coverage
 
       - name: Upload coverage to Codecov
         if: matrix.nvim-version == 'stable'

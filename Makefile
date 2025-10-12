@@ -118,7 +118,8 @@ coverage:
 		exit 1; \
 	fi
 	@rm -f luacov.*.out
-	@nvim --headless \
+	@echo "Setting up environment..."
+	@LUA_PATH="$${LUA_PATH}" LUA_CPATH="$${LUA_CPATH}" nvim --headless \
 		-c "lua package.path='lua/?.lua;lua/?/init.lua;'..package.path" \
 		-c "luafile .luacov_runner.lua" \
 		-c "PlenaryBustedDirectory test/ --exclude=integration" \
@@ -126,6 +127,8 @@ coverage:
 	@if [ ! -f luacov.stats.out ]; then \
 		echo "❌ Coverage stats file not generated"; \
 		echo "   This may indicate LuaCov is not properly loaded"; \
+		echo "   LUA_PATH: $${LUA_PATH}"; \
+		echo "   LUA_CPATH: $${LUA_CPATH}"; \
 		exit 1; \
 	fi
 	@luacov
