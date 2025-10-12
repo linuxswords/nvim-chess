@@ -7,14 +7,10 @@ A Neovim plugin for playing chess on Lichess.org directly from your editor.
 
 ## Features
 
-- 🏆 Play chess games on Lichess.org
-- 🧩 Solve chess puzzles (daily puzzles and training)
-- ⚡ Real-time game updates via streaming API
+- 🧩 Solve chess puzzles (daily puzzles and training) on lichess.org
 - 🎨 Text-based chess board with Unicode or ASCII pieces
 - 👤 Profile and rating information
-- 🎮 Game creation and management
 - ✅ Move validation and UCI notation
-- 📱 Challenge management
 - 🔄 Auto-refresh and flip board functionality
 - 📊 Puzzle activity tracking
 
@@ -80,6 +76,7 @@ require('nvim-chess').setup({
 ```
 
 Then validate and activate:
+
 ```vim
 :ChessAuthenticate
 " Uses your configured token automatically and validates it
@@ -101,13 +98,14 @@ Then validate and activate:
 
 ### Authentication Commands
 
-| Command | Description |
-|---------|-------------|
+| Command                      | Description                                                                                |
+| ---------------------------- | ------------------------------------------------------------------------------------------ |
 | `:ChessAuthenticate [token]` | Authenticate with Lichess (uses configured token, prompts if none, or uses provided token) |
-| `:ChessStatus` | Show current authentication status |
-| `:ChessLogout` | Logout from Lichess |
+| `:ChessStatus`               | Show current authentication status                                                         |
+| `:ChessLogout`               | Logout from Lichess                                                                        |
 
 **How `:ChessAuthenticate` works:**
+
 1. If you provide a token: Uses that token
 2. If token configured in setup: Uses configured token
 3. Otherwise: Prompts you to enter token
@@ -183,10 +181,11 @@ Use UCI (Universal Chess Interface) notation for moves:
    :ChessNextPuzzle
    ```
 
-   *Without authentication: Random puzzles*
-   *With authentication: Rating-matched puzzles*
+   _Without authentication: Random puzzles_
+   _With authentication: Rating-matched puzzles_
 
    To get rating-matched puzzles, authenticate first:
+
    ```vim
    :ChessAuthenticate
    ```
@@ -221,49 +220,49 @@ When viewing a puzzle, use these keys:
 
 ### Game Commands
 
-| Command                | Description                                |
-| ---------------------- | ------------------------------------------ |
-| `:ChessNewGame [time]` | Create new game with optional time control |
-| `:ChessSeekGame [time]` | Seek a game with optional time control |
-| `:ChessJoinGame {id}`  | Join existing game by ID                   |
-| `:ChessShowBoard [id]` | Show board for current/specified game      |
-| `:ChessMove {move}`    | Make a move (UCI notation)                 |
-| `:ChessProfile`        | Display profile and ratings                |
-| `:ChessResign`         | Resign current game                        |
-| `:ChessAbort`          | Abort current game                         |
-| `:ChessStartStreaming` | Start real-time event streaming            |
-| `:ChessStopStreaming`  | Stop all streaming                         |
+| Command                 | Description                                |
+| ----------------------- | ------------------------------------------ |
+| `:ChessNewGame [time]`  | Create new game with optional time control |
+| `:ChessSeekGame [time]` | Seek a game with optional time control     |
+| `:ChessJoinGame {id}`   | Join existing game by ID                   |
+| `:ChessShowBoard [id]`  | Show board for current/specified game      |
+| `:ChessMove {move}`     | Make a move (UCI notation)                 |
+| `:ChessProfile`         | Display profile and ratings                |
+| `:ChessResign`          | Resign current game                        |
+| `:ChessAbort`           | Abort current game                         |
+| `:ChessStartStreaming`  | Start real-time event streaming            |
+| `:ChessStopStreaming`   | Stop all streaming                         |
 
 ### Puzzle Commands
 
-| Command                  | Description                                |
-| ------------------------ | ------------------------------------------ |
-| `:ChessDailyPuzzle`      | Solve today's daily puzzle                 |
-| `:ChessNextPuzzle`       | Get next puzzle (random or rating-matched with auth) |
-| `:ChessGetPuzzle {id}`   | Load a specific puzzle by ID               |
-| `:ChessPuzzleActivity`   | View puzzle history (auth required)        |
+| Command                | Description                                          |
+| ---------------------- | ---------------------------------------------------- |
+| `:ChessDailyPuzzle`    | Solve today's daily puzzle                           |
+| `:ChessNextPuzzle`     | Get next puzzle (random or rating-matched with auth) |
+| `:ChessGetPuzzle {id}` | Load a specific puzzle by ID                         |
+| `:ChessPuzzleActivity` | View puzzle history (auth required)                  |
 
 ### Authentication Commands
 
-| Command                  | Description                                |
-| ------------------------ | ------------------------------------------ |
+| Command                      | Description                                     |
+| ---------------------------- | ----------------------------------------------- |
 | `:ChessAuthenticate [token]` | Authenticate with Lichess (prompts if no token) |
-| `:ChessStatus`           | Show current authentication status         |
-| `:ChessLogout`           | Logout from Lichess                        |
+| `:ChessStatus`               | Show current authentication status              |
+| `:ChessLogout`               | Logout from Lichess                             |
 
 ### Version Commands
 
-| Command                  | Description                                |
-| ------------------------ | ------------------------------------------ |
-| `:ChessVersion`          | Show plugin version                        |
-| `:ChessInfo`             | Show detailed plugin information           |
+| Command         | Description                      |
+| --------------- | -------------------------------- |
+| `:ChessVersion` | Show plugin version              |
+| `:ChessInfo`    | Show detailed plugin information |
 
 ### Testing Commands
 
-| Command                | Description                                |
-| ---------------------- | ------------------------------------------ |
+| Command                | Description                                                  |
+| ---------------------- | ------------------------------------------------------------ |
 | `:ChessDemo [type]`    | Run demo scenarios (basic\|errors\|game\|bench\|interactive) |
-| `:ChessMock {on\|off}` | Enable/disable mock mode for testing      |
+| `:ChessMock {on\|off}` | Enable/disable mock mode for testing                         |
 
 ## Board Display
 
@@ -390,6 +389,7 @@ make test-integration
 ```
 
 Integration tests verify:
+
 - Token validation
 - Profile fetching
 - API rate limiting
@@ -403,4 +403,3 @@ Integration tests verify:
 - Check the documentation with `:help nvim-chess`
 - Use `:ChessDemo` for local testing without Lichess account
 - Ensure you have a valid Lichess token configured for real gameplay
-
