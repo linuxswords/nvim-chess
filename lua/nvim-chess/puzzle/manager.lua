@@ -263,9 +263,7 @@ function M.get_next_puzzle()
   if puzzle_data and puzzle_data.puzzle then
     current_puzzle = parse_puzzle(puzzle_data.puzzle, puzzle_data.game)
 
-    local themes_str = table.concat(current_puzzle.themes, ", ")
-    vim.notify(string.format("Puzzle (Rating: %d) - Themes: %s",
-      current_puzzle.rating, themes_str), vim.log.levels.INFO)
+    vim.notify(string.format("Puzzle (Rating: %d)", current_puzzle.rating), vim.log.levels.INFO)
 
     M.show_puzzle()
     return true
