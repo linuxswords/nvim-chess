@@ -1,6 +1,6 @@
 # Makefile for nvim-chess development
 
-.PHONY: test test-unit test-integration demo lint format install-deps help
+.PHONY: test test-unit test-integration demo lint install-deps help
 
 # Default target
 help:
@@ -16,7 +16,6 @@ help:
 	@echo ""
 	@echo "Development:"
 	@echo "  lint           - Run linting (if selene/luacheck available)"
-	@echo "  format         - Format code with stylua (if available)"
 	@echo "  install-deps   - Install development dependencies"
 	@echo ""
 	@echo "Quick testing:"
@@ -86,22 +85,13 @@ lint:
 		echo "No linting tools found (selene or luacheck)"; \
 	fi
 
-# Formatting (if stylua is available)
-format:
-	@if command -v stylua >/dev/null 2>&1; then \
-		echo "Formatting with stylua..."; \
-		stylua lua/; \
-	else \
-		echo "stylua not found - skipping formatting"; \
-	fi
 
 # Install development dependencies (basic)
 install-deps:
 	@echo "Development dependencies:"
 	@echo "1. Install plenary.nvim in your Neovim config"
 	@echo "2. Optional: Install selene for linting (cargo install selene)"
-	@echo "3. Optional: Install stylua for formatting (cargo install stylua)"
-	@echo "4. Optional: Install luacheck for linting (luarocks install luacheck)"
+	@echo "3. Optional: Install luacheck for linting (luarocks install luacheck)"
 
 # Clean up test artifacts
 clean:
