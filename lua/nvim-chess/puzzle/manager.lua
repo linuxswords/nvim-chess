@@ -70,8 +70,10 @@ local function get_fen_from_game(game_data, initial_ply)
     return nil
   end
 
-  -- Convert PGN to FEN at the puzzle's starting position (initialPly)
-  local fen, err = pgn_converter.pgn_to_fen(game_data.pgn, initial_ply or 0)
+  -- Convert PGN to FEN at the puzzle's starting position
+  -- Lichess initialPly is 0-based, but our move array is 1-based, so add 1
+  local target_ply = (initial_ply or 0) + 1
+  local fen, err = pgn_converter.pgn_to_fen(game_data.pgn, target_ply)
 
   if not fen then
     vim.notify("Warning: Could not generate FEN from PGN: " .. (err or "unknown error"),
