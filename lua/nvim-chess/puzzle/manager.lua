@@ -344,9 +344,10 @@ function M.show_puzzle()
     -- Render board - flip if black to move
     local flip = should_flip_board(current_puzzle.initial_ply)
     local render_board = function(board_data, should_flip)
+      -- Note: Using filled symbols for white, outlined for black for better contrast
       local pieces = {
-        white = { king = "♔", queen = "♕", rook = "♖", bishop = "♗", knight = "♘", pawn = "♙" },
-        black = { king = "♚", queen = "♛", rook = "♜", bishop = "♝", knight = "♞", pawn = "♟" }
+        white = { king = "♚", queen = "♛", rook = "♜", bishop = "♝", knight = "♞", pawn = "♟" },
+        black = { king = "♔", queen = "♕", rook = "♖", bishop = "♗", knight = "♘", pawn = "♙" }
       }
 
       local lines = {}
