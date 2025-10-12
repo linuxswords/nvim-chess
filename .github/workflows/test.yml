@@ -31,28 +31,8 @@ jobs:
           git clone --depth 1 https://github.com/nvim-lua/plenary.nvim \
             ~/.local/share/nvim/site/pack/vendor/start/plenary.nvim
 
-      - name: Install LuaRocks and LuaCov
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y luarocks
-          sudo luarocks install luacov
-
       - name: Run unit tests
         run: make test-unit
-
-      - name: Run tests with coverage
-        if: matrix.nvim-version == 'stable'
-        run: |
-          # Set LuaRocks paths and run coverage in same shell
-          eval $(luarocks path --no-bin) && make coverage
-
-      - name: Upload coverage to Codecov
-        if: matrix.nvim-version == 'stable'
-        uses: codecov/codecov-action@v3
-        with:
-          files: ./luacov.report.out
-          flags: unittests
-          name: nvim-chess-coverage
 
       - name: Run integration tests
         env:
