@@ -332,27 +332,10 @@ function M.show_puzzle()
     return "White"
   end
 
-  -- Display puzzle info and board
-  local info_lines = {
-    "═══════════════════════════════════════",
-    "         🧩 LICHESS PUZZLE",
-    "═══════════════════════════════════════",
-    "",
-    "Puzzle ID:  " .. current_puzzle.id,
-    "Rating:     " .. current_puzzle.rating,
-    "Themes:     " .. (table.concat(current_puzzle.themes, ", ") ~= "" and table.concat(current_puzzle.themes, ", ") or "None"),
-    "Plays:      " .. (current_puzzle.plays or "N/A"),
-    "",
-    "Task: Find the best move for " .. get_turn_from_fen(current_puzzle.fen),
-    "",
-    "Controls: (m)ove | (h)int | (s)olution | (n)ext | (q)uit",
-    "═══════════════════════════════════════",
-    "",
-  }
-
   -- Render board
   local board_fen = current_puzzle.fen
   local board = board_fen and parse_fen_position(board_fen)
+  local display_lines
 
   if board then
     -- Render board - flip if black to move (determine from FEN)
@@ -397,33 +380,62 @@ function M.show_puzzle()
     end
 
     local board_lines = render_board(board, flip)
-    for _, line in ipairs(board_lines) do
-      table.insert(info_lines, line)
+
+    -- Create info panel for right side
+    local info_panel = {
+      "┌─ 🧩 LICHESS PUZZLE ─────────┐",
+      "│                             │",
+      "│ ID:     " .. string.format("%-18s", current_puzzle.id) .. "│",
+      "│ Rating: " .. string.format("%-18s", tostring(current_puzzle.rating)) .. "│",
+      "│ Plays:  " .. string.format("%-18s", tostring(current_puzzle.plays or "N/A")) .. "│",
+      "│                             │",
+      "│ Task: " .. string.format("%-20s", "Find best move") .. "│",
+      "│       " .. string.format("%-20s", "for " .. turn) .. "│",
+      "│                             │",
+      "├─ CONTROLS ──────────────────┤",
+      "│ (m) Make move               │",
+      "│ (h) Show hint               │",
+      "│ (s) Show solution           │",
+      "│ (n) Next puzzle             │",
+      "│ (q) Quit                    │",
+      "└─────────────────────────────┘"
+    }
+
+    -- Add moves if any
+    if #current_puzzle.moves_made > 0 then
+      table.insert(info_panel, "")
+      table.insert(info_panel, "Moves made:")
+      table.insert(info_panel, table.concat(current_puzzle.moves_made, " → "))
     end
+
+    -- Combine board and info side by side
+    display_lines = {}
+    for i = 1, math.max(#board_lines, #info_panel) do
+      local board_part = board_lines[i] or string.rep(" ", 20)
+      local info_part = info_panel[i] or ""
+      table.insert(display_lines, board_part .. "   " .. info_part)
+    end
+
   else
     -- FEN not available - show link to puzzle on Lichess
-    table.insert(info_lines, "")
-    table.insert(info_lines, "⚠ Board display not available")
-    table.insert(info_lines, "")
+    display_lines = {
+      "⚠ Board display not available",
+      ""
+    }
     if current_puzzle.game_id then
-      table.insert(info_lines, "View puzzle on Lichess:")
-      table.insert(info_lines, string.format("https://lichess.org/training/%s", current_puzzle.id))
-      table.insert(info_lines, "")
+      table.insert(display_lines, "View puzzle on Lichess:")
+      table.insert(display_lines, string.format("https://lichess.org/training/%s", current_puzzle.id))
+      table.insert(display_lines, "")
       if current_puzzle.pgn then
-        table.insert(info_lines, "PGN: " .. current_puzzle.pgn)
+        table.insert(display_lines, "PGN: " .. current_puzzle.pgn)
       end
     else
-      table.insert(info_lines, "FEN not available from API")
+      table.insert(display_lines, "FEN not available from API")
     end
-  end
-
-  table.insert(info_lines, "")
-  if #current_puzzle.moves_made > 0 then
-    table.insert(info_lines, "Moves: " .. table.concat(current_puzzle.moves_made, ", "))
   end
 
   vim.api.nvim_buf_set_option(buf, 'modifiable', true)
-  vim.api.nvim_buf_set_lines(buf, 0, -1, false, info_lines)
+  vim.api.nvim_buf_set_lines(buf, 0, -1, false, display_lines)
   vim.api.nvim_buf_set_option(buf, 'modifiable', false)
 
   -- Check if we're already in a puzzle buffer and reuse that window
