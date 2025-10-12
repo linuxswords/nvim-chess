@@ -408,7 +408,7 @@ function M.show_puzzle()
 			"│ (m) Make move               │",
 			"│ (h) Show hint               │",
 			"│ (s) Show solution           │",
-			"│ (n) Next puzzle             │",
+			"│ (>) Next puzzle             │",
 			"│ (q) Quit                    │",
 			"└─────────────────────────────┘",
 		}
@@ -492,7 +492,7 @@ function M.show_puzzle()
 		M.show_solution()
 	end, opts)
 
-	vim.keymap.set("n", "n", function()
+	vim.keymap.set("n", ">", function()
 		M.get_next_puzzle()
 	end, opts)
 
@@ -550,7 +550,7 @@ function M.attempt_move(move)
 				moves = vim.deepcopy(current_puzzle.moves_made),
 			})
 
-			vim.notify("✓ Puzzle solved! Press 'n' for next puzzle.", vim.log.levels.INFO)
+			vim.notify("✓ Puzzle solved! Press '>' for next puzzle.", vim.log.levels.INFO)
 
 			-- Submit solution if authenticated
 			if auth.is_authenticated() then
