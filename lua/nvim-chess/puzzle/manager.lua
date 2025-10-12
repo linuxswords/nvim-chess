@@ -336,29 +336,33 @@ function M.show_puzzle()
       }
 
       local lines = {}
-      table.insert(lines, "  a b c d e f g h")
+      local file_labels = should_flip and "  h g f e d c b a" or "  a b c d e f g h"
+      table.insert(lines, file_labels)
 
       for rank_idx = 1, 8 do
-        local rank = should_flip and rank_idx or (9 - rank_idx)
-        local line = tostring(rank) .. " "
+        -- When not flipped (white perspective): rank_idx 1→8 maps to rank 8→1 (top to bottom)
+        -- When flipped (black perspective): rank_idx 1→8 maps to rank 1→8 (top to bottom)
+        local actual_rank = should_flip and rank_idx or (9 - rank_idx)
+
+        local line = tostring(actual_rank) .. " "
 
         for file_idx = 1, 8 do
           local file = should_flip and (9 - file_idx) or file_idx
-          local piece = board_data[rank] and board_data[rank][file]
+          local piece = board_data[actual_rank] and board_data[actual_rank][file]
 
           if piece then
             line = line .. pieces[piece.color][piece.type] .. " "
           else
-            local is_light = (rank + file) % 2 == 0
+            local is_light = (actual_rank + file) % 2 == 0
             line = line .. (is_light and "·" or " ") .. " "
           end
         end
 
-        line = line .. " " .. tostring(rank)
+        line = line .. " " .. tostring(actual_rank)
         table.insert(lines, line)
       end
 
-      table.insert(lines, "  a b c d e f g h")
+      table.insert(lines, file_labels)
       return lines
     end
 
