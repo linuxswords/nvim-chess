@@ -318,6 +318,20 @@ function M.show_puzzle()
   vim.api.nvim_buf_set_option(buf, 'bufhidden', 'hide')
   vim.api.nvim_buf_set_option(buf, 'swapfile', false)
 
+  -- Determine whose turn it is from the FEN
+  local function get_turn_from_fen(fen)
+    if not fen then return "White" end
+    local parts = {}
+    for part in fen:gmatch("%S+") do
+      table.insert(parts, part)
+    end
+    -- FEN part 2 is the active color: 'w' or 'b'
+    if #parts >= 2 then
+      return parts[2] == "w" and "White" or "Black"
+    end
+    return "White"
+  end
+
   -- Display puzzle info and board
   local info_lines = {
     "═══════════════════════════════════════",
@@ -329,7 +343,7 @@ function M.show_puzzle()
     "Themes:     " .. (table.concat(current_puzzle.themes, ", ") ~= "" and table.concat(current_puzzle.themes, ", ") or "None"),
     "Plays:      " .. (current_puzzle.plays or "N/A"),
     "",
-    "Task: Find the best move for " .. get_player_from_ply(current_puzzle.initial_ply),
+    "Task: Find the best move for " .. get_turn_from_fen(current_puzzle.fen),
     "",
     "Controls: (m)ove | (h)int | (s)olution | (n)ext | (q)uit",
     "═══════════════════════════════════════",
@@ -341,8 +355,9 @@ function M.show_puzzle()
   local board = board_fen and parse_fen_position(board_fen)
 
   if board then
-    -- Render board - flip if black to move
-    local flip = should_flip_board(current_puzzle.initial_ply)
+    -- Render board - flip if black to move (determine from FEN)
+    local turn = get_turn_from_fen(current_puzzle.fen)
+    local flip = (turn == "Black")
     local render_board = function(board_data, should_flip)
       -- Note: Using filled symbols for white, outlined for black for better contrast
       local pieces = {
