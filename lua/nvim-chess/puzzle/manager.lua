@@ -351,9 +351,9 @@ function M.show_puzzle()
   local display_lines
 
   if board then
-    -- Render board - flip if player is white so they see from their perspective
+    -- Render board - flip if player is black so they see from their perspective
     local player_color = current_puzzle.player_color or "White"
-    local flip = (player_color == "White")
+    local flip = (player_color == "Black")
     local render_board = function(board_data, should_flip)
       -- Note: Using filled symbols for white, outlined for black for better contrast
       local pieces = {
