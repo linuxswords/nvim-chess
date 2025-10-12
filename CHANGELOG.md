@@ -5,6 +5,23 @@ All notable changes to nvim-chess will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.1] - 2025-10-12
+
+### Fixed
+
+- Board coordinate labels now display correctly when flipped for black's perspective
+  - File coordinates (a-h) now properly reverse to (h-a) when flipped
+  - Rank numbers (1-8) now correctly show from black's viewpoint when flipped
+  - Fixes confusion when entering moves from black's perspective
+
+### Changed
+
+- Replaced magic numbers with readable constants for player color determination
+  - Added `PLY_WHITE` and `PLY_BLACK` constants
+  - Added `get_player_from_ply()` helper function
+  - Added `should_flip_board()` helper function
+  - Improves code readability and maintainability
+
 ## [0.4.0] - 2025-10-12
 
 ### Changed
@@ -339,6 +356,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Neovim 0.7+
 - plenary.nvim
 
+[0.4.1]: https://github.com/linuxswords/nvim-chess/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/linuxswords/nvim-chess/compare/v0.3.5...v0.4.0
 [0.3.5]: https://github.com/linuxswords/nvim-chess/compare/v0.3.4...v0.3.5
 [0.3.4]: https://github.com/linuxswords/nvim-chess/compare/v0.3.3...v0.3.4
