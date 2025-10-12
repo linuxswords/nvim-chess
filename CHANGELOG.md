@@ -5,6 +5,55 @@ All notable changes to nvim-chess will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2025-10-12
+
+### Changed
+
+- **BREAKING CHANGE**: Refactored to focus exclusively on chess puzzles
+  - Removed all game playing functionality (creating, joining, and playing games)
+  - Removed streaming/real-time game updates
+  - Removed challenge management features
+  - Removed demo and mock testing utilities
+  - Simplified configuration to focus on puzzle-solving features
+- Puzzle manager now includes self-contained board rendering
+  - No dependency on separate ui.board module
+  - Inline FEN parsing and board display
+  - Streamlined puzzle solving experience
+
+### Removed
+
+- Game playing commands: `ChessNewGame`, `ChessSeekGame`, `ChessJoinGame`, `ChessMove`
+- Game control commands: `ChessResign`, `ChessAbort`
+- Streaming commands: `ChessStartStreaming`, `ChessStopStreaming`
+- Demo commands: `ChessDemo`, `ChessMock`
+- Profile display command: `ChessProfile`
+- Game-related modules: `game/manager.lua`, `api/streaming.lua`, `ui/board.lua`
+- 17 game-related integration tests (103 passing unit tests remain)
+
+### Kept
+
+- All puzzle commands: `ChessDailyPuzzle`, `ChessNextPuzzle`, `ChessGetPuzzle`, `ChessPuzzleActivity`
+- Authentication commands: `ChessAuthenticate`, `ChessStatus`, `ChessLogout`
+- Version commands: `ChessVersion`, `ChessInfo`
+- Complete chess engine with PGN-to-FEN conversion
+- Puzzle board rendering with Unicode pieces
+- Move validation and puzzle solving features
+
+### Fixed
+
+- LuaCov integration in CI pipeline
+  - Created `.luacov_runner.lua` for proper coverage initialization
+  - Updated Makefile to use luafile for coverage runner
+  - Modified GitHub Actions workflow to set LuaRocks paths correctly
+  - Fixed "Could not load stats file" error in CI
+
+### Technical Details
+
+- Simplified API client to only puzzle and account endpoints
+- Authentication now uses `/account` endpoint instead of `/profile`
+- Reduced configuration surface area (removed ui and game config sections)
+- Code reduction: Removed ~1,750 lines, keeping focus on core puzzle functionality
+
 ## [0.3.5] - 2025-10-10
 
 ### Fixed
@@ -290,6 +339,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Neovim 0.7+
 - plenary.nvim
 
+[0.4.0]: https://github.com/linuxswords/nvim-chess/compare/v0.3.5...v0.4.0
 [0.3.5]: https://github.com/linuxswords/nvim-chess/compare/v0.3.4...v0.3.5
 [0.3.4]: https://github.com/linuxswords/nvim-chess/compare/v0.3.3...v0.3.4
 [0.3.3]: https://github.com/linuxswords/nvim-chess/compare/v0.3.2...v0.3.3
