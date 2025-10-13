@@ -98,6 +98,40 @@ function M.get_puzzle_dashboard(days)
   return make_request("GET", "/puzzle/dashboard/" .. (days or 30) .. query_string)
 end
 
+-- Submit puzzle round result
+-- Params:
+--   puzzle_id: The puzzle ID
+--   win: boolean - true if solved correctly, false if failed
+function M.submit_puzzle_round(puzzle_id, win)
+  if not puzzle_id then
+    return nil, "puzzle_id is required"
+  end
+
+  local endpoint = string.format("/puzzle/round/%s/%d", puzzle_id, win and 1 or 0)
+
+  -- Debug logging
+  local log = io.open("/tmp/nvim-chess-debug.log", "a")
+  if log then
+    log:write(string.format("[%s] Submitting puzzle round: %s (win: %s)\n", os.date("%Y-%m-%d %H:%M:%S"), puzzle_id, tostring(win)))
+    log:write(string.format("[%s] Endpoint: POST %s\n", os.date("%Y-%m-%d %H:%M:%S"), endpoint))
+    log:close()
+  end
+
+  local result, err = make_request("POST", endpoint)
+
+  if log then
+    log = io.open("/tmp/nvim-chess-debug.log", "a")
+    if err then
+      log:write(string.format("[%s] Submit error: %s\n", os.date("%Y-%m-%d %H:%M:%S"), err))
+    else
+      log:write(string.format("[%s] Submit successful\n", os.date("%Y-%m-%d %H:%M:%S")))
+    end
+    log:close()
+  end
+
+  return result, err
+end
+
 -- Account API (for authentication validation)
 function M.get_account()
   return make_request("GET", "/account")

@@ -259,11 +259,48 @@ function M.get_daily_puzzle()
 end
 
 -- Get next training puzzle
-function M.get_next_puzzle()
+function M.get_next_puzzle(skip_confirmation)
   -- Note: /api/puzzle/next works without authentication,
   -- but authenticated users get puzzles matched to their rating
   if not auth.is_authenticated() then
     vim.notify("Getting random puzzle (authenticate for rating-matched puzzles)", vim.log.levels.WARN)
+  end
+
+  -- Check if there's an unsolved puzzle
+  if current_puzzle and not current_puzzle.completed and not skip_confirmation then
+    -- Prompt user for confirmation
+    local response = vim.fn.input("Current puzzle is not solved. Skip and mark as failed? (y/N): ")
+    if response:lower() ~= "y" then
+      vim.notify("Staying on current puzzle", vim.log.levels.INFO)
+      return false
+    end
+
+    -- Mark current puzzle as failed and submit to Lichess
+    current_puzzle.completed = true
+    current_puzzle.success = false
+    table.insert(puzzle_history, {
+      id = current_puzzle.id,
+      success = false,
+      moves = vim.deepcopy(current_puzzle.moves_made),
+      skipped = true,
+    })
+
+    -- Submit failure to Lichess if authenticated
+    if auth.is_authenticated() then
+      local log_file = "/tmp/nvim-chess-debug.log"
+      local log = io.open(log_file, "a")
+      if log then
+        log:write(string.format("[%s] Submitting skipped puzzle as failure: %s\n", os.date("%Y-%m-%d %H:%M:%S"), current_puzzle.id))
+        log:close()
+      end
+
+      local result, err = api.submit_puzzle_round(current_puzzle.id, false)
+      if err then
+        vim.notify("Warning: Failed to submit puzzle result to Lichess: " .. err, vim.log.levels.WARN)
+      else
+        vim.notify("Puzzle marked as failed on Lichess", vim.log.levels.INFO)
+      end
+    end
   end
 
   -- Debug: log before fetching
@@ -613,9 +650,12 @@ function M.attempt_move(move)
 
       vim.notify("✓ Puzzle solved! Press '>' for next puzzle.", vim.log.levels.INFO)
 
-      -- Submit solution if authenticated
+      -- Submit solution to Lichess if authenticated
       if auth.is_authenticated() then
-        M.submit_solution()
+        local result, err = api.submit_puzzle_round(current_puzzle.id, true)
+        if err then
+          vim.notify("Warning: Failed to submit puzzle result to Lichess: " .. err, vim.log.levels.WARN)
+        end
       end
     else
       vim.notify("✓ Correct! Continue...", vim.log.levels.INFO)
@@ -652,9 +692,12 @@ function M.attempt_move(move)
 
     vim.notify("✗ Wrong move! Expected: " .. expected_move .. ". Press 's' for solution.", vim.log.levels.ERROR)
 
-    -- Submit failed solution if authenticated
+    -- Submit failed solution to Lichess if authenticated
     if auth.is_authenticated() then
-      M.submit_solution()
+      local result, err = api.submit_puzzle_round(current_puzzle.id, false)
+      if err then
+        vim.notify("Warning: Failed to submit puzzle result to Lichess: " .. err, vim.log.levels.WARN)
+      end
     end
   end
 
@@ -693,6 +736,14 @@ function M.show_solution()
 
   current_puzzle.completed = true
   current_puzzle.success = false
+
+  -- Submit failure to Lichess if authenticated (viewing solution counts as giving up)
+  if auth.is_authenticated() then
+    local result, err = api.submit_puzzle_round(current_puzzle.id, false)
+    if err then
+      vim.notify("Warning: Failed to submit puzzle result to Lichess: " .. err, vim.log.levels.WARN)
+    end
+  end
 end
 
 -- Submit solution to Lichess (requires authentication)
