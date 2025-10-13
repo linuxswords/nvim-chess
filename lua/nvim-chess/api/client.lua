@@ -53,7 +53,27 @@ function M.get_daily_puzzle()
 end
 
 function M.get_next_puzzle()
-  return make_request("GET", "/puzzle/next")
+  -- Add cache-busting query parameter
+  local timestamp = os.time() .. math.random(1000, 9999)
+  local endpoint = "/puzzle/next?t=" .. timestamp
+
+  local result, err = make_request("GET", endpoint)
+
+  -- Debug logging
+  local log = io.open("/tmp/nvim-chess-debug.log", "a")
+  if log then
+    log:write(string.format("[%s] API get_next_puzzle called with endpoint: %s\n", os.date("%Y-%m-%d %H:%M:%S"), endpoint))
+    if result and result.puzzle then
+      log:write(string.format("[%s] API returned puzzle: %s (rating: %d)\n", os.date("%Y-%m-%d %H:%M:%S"), result.puzzle.id, result.puzzle.rating or 0))
+    elseif err then
+      log:write(string.format("[%s] API error: %s\n", os.date("%Y-%m-%d %H:%M:%S"), err))
+    else
+      log:write(string.format("[%s] API returned unexpected response\n", os.date("%Y-%m-%d %H:%M:%S")))
+    end
+    log:close()
+  end
+
+  return result, err
 end
 
 function M.get_puzzle(puzzle_id)
