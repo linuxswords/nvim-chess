@@ -102,22 +102,32 @@ end
 -- Params:
 --   puzzle_id: The puzzle ID
 --   win: boolean - true if solved correctly, false if failed
-function M.submit_puzzle_round(puzzle_id, win)
+--   theme: string - puzzle theme (default: "mix" for general training)
+function M.submit_puzzle_round(puzzle_id, win, theme)
   if not puzzle_id then
     return nil, "puzzle_id is required"
   end
 
-  local endpoint = string.format("/puzzle/round/%s/%d", puzzle_id, win and 1 or 0)
+  theme = theme or "mix"
+  local endpoint = string.format("/training/complete/%s/%s", theme, puzzle_id)
 
   -- Debug logging
   local log = io.open("/tmp/nvim-chess-debug.log", "a")
   if log then
-    log:write(string.format("[%s] Submitting puzzle round: %s (win: %s)\n", os.date("%Y-%m-%d %H:%M:%S"), puzzle_id, tostring(win)))
+    log:write(string.format("[%s] Submitting puzzle round: %s (win: %s, theme: %s)\n", os.date("%Y-%m-%d %H:%M:%S"), puzzle_id, tostring(win), theme))
     log:write(string.format("[%s] Endpoint: POST %s\n", os.date("%Y-%m-%d %H:%M:%S"), endpoint))
     log:close()
   end
 
-  local result, err = make_request("POST", endpoint)
+  -- The endpoint expects a POST with win parameter in the body
+  local body = string.format("win=%s", win and "true" or "false")
+  local opts = {
+    body = body,
+    headers = get_headers(),
+  }
+  opts.headers["Content-Type"] = "application/x-www-form-urlencoded"
+
+  local result, err = make_request("POST", endpoint, opts)
 
   if log then
     log = io.open("/tmp/nvim-chess-debug.log", "a")
