@@ -260,22 +260,20 @@ end
 
 -- Get next training puzzle
 function M.get_next_puzzle(skip_confirmation)
-  -- Note: /api/puzzle/next works without authentication,
-  -- but authenticated users get puzzles matched to their rating
-  if not auth.is_authenticated() then
-    vim.notify("Getting random puzzle (authenticate for rating-matched puzzles)", vim.log.levels.WARN)
-  end
+  -- Note: The Lichess API does not support submitting puzzle completions via API.
+  -- Authenticated /api/puzzle/next returns the same puzzle because it's meant for the web UI.
+  -- For API usage, we track puzzles locally and always get random puzzles.
 
   -- Check if there's an unsolved puzzle
   if current_puzzle and not current_puzzle.completed and not skip_confirmation then
     -- Prompt user for confirmation
-    local response = vim.fn.input("Current puzzle is not solved. Skip and mark as failed? (y/N): ")
+    local response = vim.fn.input("Current puzzle is not solved. Skip and mark as failed locally? (y/N): ")
     if response:lower() ~= "y" then
       vim.notify("Staying on current puzzle", vim.log.levels.INFO)
       return false
     end
 
-    -- Mark current puzzle as failed and submit to Lichess
+    -- Mark current puzzle as failed locally
     current_puzzle.completed = true
     current_puzzle.success = false
     table.insert(puzzle_history, {
@@ -285,22 +283,7 @@ function M.get_next_puzzle(skip_confirmation)
       skipped = true,
     })
 
-    -- Submit failure to Lichess if authenticated
-    if auth.is_authenticated() then
-      local log_file = "/tmp/nvim-chess-debug.log"
-      local log = io.open(log_file, "a")
-      if log then
-        log:write(string.format("[%s] Submitting skipped puzzle as failure: %s\n", os.date("%Y-%m-%d %H:%M:%S"), current_puzzle.id))
-        log:close()
-      end
-
-      local result, err = api.submit_puzzle_round(current_puzzle.id, false)
-      if err then
-        vim.notify("Warning: Failed to submit puzzle result to Lichess: " .. err, vim.log.levels.WARN)
-      else
-        vim.notify("Puzzle marked as failed on Lichess", vim.log.levels.INFO)
-      end
-    end
+    vim.notify("Puzzle skipped (tracked locally only)", vim.log.levels.INFO)
   end
 
   -- Debug: log before fetching
@@ -650,13 +633,8 @@ function M.attempt_move(move)
 
       vim.notify("✓ Puzzle solved! Press '>' for next puzzle.", vim.log.levels.INFO)
 
-      -- Submit solution to Lichess if authenticated
-      if auth.is_authenticated() then
-        local result, err = api.submit_puzzle_round(current_puzzle.id, true)
-        if err then
-          vim.notify("Warning: Failed to submit puzzle result to Lichess: " .. err, vim.log.levels.WARN)
-        end
-      end
+      -- Note: Lichess API doesn't support submitting puzzle results
+      -- Results are tracked locally only
     else
       vim.notify("✓ Correct! Continue...", vim.log.levels.INFO)
       -- Auto-play opponent's response if available
@@ -692,13 +670,8 @@ function M.attempt_move(move)
 
     vim.notify("✗ Wrong move! Expected: " .. expected_move .. ". Press 's' for solution.", vim.log.levels.ERROR)
 
-    -- Submit failed solution to Lichess if authenticated
-    if auth.is_authenticated() then
-      local result, err = api.submit_puzzle_round(current_puzzle.id, false)
-      if err then
-        vim.notify("Warning: Failed to submit puzzle result to Lichess: " .. err, vim.log.levels.WARN)
-      end
-    end
+    -- Note: Lichess API doesn't support submitting puzzle results
+    -- Results are tracked locally only
   end
 
   return true
@@ -737,13 +710,8 @@ function M.show_solution()
   current_puzzle.completed = true
   current_puzzle.success = false
 
-  -- Submit failure to Lichess if authenticated (viewing solution counts as giving up)
-  if auth.is_authenticated() then
-    local result, err = api.submit_puzzle_round(current_puzzle.id, false)
-    if err then
-      vim.notify("Warning: Failed to submit puzzle result to Lichess: " .. err, vim.log.levels.WARN)
-    end
-  end
+  -- Note: Lichess API doesn't support submitting puzzle results
+  -- Results are tracked locally only
 end
 
 -- Submit solution to Lichess (requires authentication)

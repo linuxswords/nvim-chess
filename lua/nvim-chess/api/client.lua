@@ -57,12 +57,22 @@ function M.get_next_puzzle()
   local timestamp = os.time() .. math.random(1000, 9999)
   local endpoint = "/puzzle/next?t=" .. timestamp
 
-  local result, err = make_request("GET", endpoint)
+  -- IMPORTANT: Don't send authentication for /puzzle/next
+  -- Reason: Authenticated requests return the same puzzle until completion is submitted
+  -- via web UI. The API doesn't support submitting completions, so authenticated mode
+  -- gets stuck. Unauthenticated mode gives random puzzles each time.
+  local opts = {
+    headers = {
+      ["Accept"] = "application/json",
+    },
+  }
+
+  local result, err = make_request("GET", endpoint, opts)
 
   -- Debug logging
   local log = io.open("/tmp/nvim-chess-debug.log", "a")
   if log then
-    log:write(string.format("[%s] API get_next_puzzle called with endpoint: %s\n", os.date("%Y-%m-%d %H:%M:%S"), endpoint))
+    log:write(string.format("[%s] API get_next_puzzle called with endpoint: %s (unauthenticated)\n", os.date("%Y-%m-%d %H:%M:%S"), endpoint))
     if result and result.puzzle then
       log:write(string.format("[%s] API returned puzzle: %s (rating: %d)\n", os.date("%Y-%m-%d %H:%M:%S"), result.puzzle.id, result.puzzle.rating or 0))
     elseif err then
@@ -109,7 +119,7 @@ function M.submit_puzzle_round(puzzle_id, win, theme)
   end
 
   theme = theme or "mix"
-  local endpoint = string.format("/training/complete/%s/%s", theme, puzzle_id)
+  local endpoint = string.format("/api/training/complete/%s/%s", theme, puzzle_id)
 
   -- Debug logging
   local log = io.open("/tmp/nvim-chess-debug.log", "a")
