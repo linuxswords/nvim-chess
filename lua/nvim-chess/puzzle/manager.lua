@@ -441,18 +441,28 @@ function M.show_puzzle()
   local in_puzzle_buffer = current_buf_name:match("puzzle%-")
   local old_puzzle_buf = current_buf
 
+  -- Debug info
+  vim.notify(string.format("[DEBUG] Current buf: %s, New buf name: %s", current_buf_name, buf_name), vim.log.levels.INFO)
+
   -- Open in new window if not already visible, otherwise reuse current window if it's a puzzle
   local win = vim.fn.bufwinid(buf)
+  vim.notify(string.format("[DEBUG] New buf visible in win: %d, in_puzzle_buffer: %s", win, tostring(in_puzzle_buffer)), vim.log.levels.INFO)
+
   if win == -1 then
     -- Buffer not visible anywhere
     if in_puzzle_buffer then
       -- We're in a puzzle buffer, reuse current window
+      vim.notify("[DEBUG] Switching window to new buffer...", vim.log.levels.INFO)
+
       -- First switch to the new buffer, then delete the old one
       vim.api.nvim_win_set_buf(current_win, buf)
       vim.api.nvim_set_current_win(current_win)
 
+      vim.notify(string.format("[DEBUG] Window switched. Current buf after switch: %s", vim.api.nvim_buf_get_name(vim.api.nvim_win_get_buf(current_win))), vim.log.levels.INFO)
+
       -- Delete the old puzzle buffer if it's different from the new one
       if vim.api.nvim_buf_is_valid(old_puzzle_buf) and old_puzzle_buf ~= buf then
+        vim.notify(string.format("[DEBUG] Deleting old buffer: %d", old_puzzle_buf), vim.log.levels.INFO)
         vim.api.nvim_buf_delete(old_puzzle_buf, { force = true })
       end
     else
