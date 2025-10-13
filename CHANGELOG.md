@@ -5,6 +5,34 @@ All notable changes to nvim-chess will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.2] - 2025-10-13
+
+### Fixed
+
+- Puzzle navigation now properly fetches different puzzles each time
+  - Fixed issue where `/api/puzzle/next` returned same puzzle when authenticated
+  - Root cause: Lichess API doesn't support submitting puzzle completions via API
+  - Solution: Use unauthenticated requests for puzzle fetching to get random puzzles
+  - All puzzle progress continues to be tracked locally
+  - Pressing '>' for next puzzle now works correctly without confirmation prompts
+
+### Changed
+
+- Puzzle fetching now uses unauthenticated API requests
+  - Ensures different random puzzles on each fetch
+  - Maintains all local tracking functionality
+  - Added confirmation prompt when skipping unsolved puzzles
+- Removed debug logging to /tmp directory
+  - Cleaner production code
+  - Better performance without file I/O overhead
+
+### Technical Details
+
+- Modified `api.get_next_puzzle()` to override authentication headers
+- Updated puzzle manager to handle puzzle state transitions locally
+- Removed attempted submissions to non-existent `/api/puzzle/round` endpoint
+- Added comprehensive inline documentation explaining API limitations
+
 ## [0.4.1] - 2025-10-12
 
 ### Fixed
@@ -356,6 +384,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Neovim 0.7+
 - plenary.nvim
 
+[0.4.2]: https://github.com/linuxswords/nvim-chess/compare/v0.4.1...v0.4.2
 [0.4.1]: https://github.com/linuxswords/nvim-chess/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/linuxswords/nvim-chess/compare/v0.3.5...v0.4.0
 [0.3.5]: https://github.com/linuxswords/nvim-chess/compare/v0.3.4...v0.3.5
