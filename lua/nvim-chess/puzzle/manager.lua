@@ -461,7 +461,10 @@ function M.show_puzzle()
 		-- Buffer not visible anywhere
 		if in_puzzle_buffer then
 			-- We're in a puzzle buffer, reuse current window
+			-- Force the buffer switch to happen immediately
 			vim.api.nvim_win_set_buf(current_win, buf)
+			-- Ensure we're in the correct window
+			vim.api.nvim_set_current_win(current_win)
 		else
 			-- Not in a puzzle buffer, create new split
 			vim.cmd("split")
