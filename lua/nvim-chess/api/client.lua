@@ -67,23 +67,7 @@ function M.get_next_puzzle()
     },
   }
 
-  local result, err = make_request("GET", endpoint, opts)
-
-  -- Debug logging
-  local log = io.open("/tmp/nvim-chess-debug.log", "a")
-  if log then
-    log:write(string.format("[%s] API get_next_puzzle called with endpoint: %s (unauthenticated)\n", os.date("%Y-%m-%d %H:%M:%S"), endpoint))
-    if result and result.puzzle then
-      log:write(string.format("[%s] API returned puzzle: %s (rating: %d)\n", os.date("%Y-%m-%d %H:%M:%S"), result.puzzle.id, result.puzzle.rating or 0))
-    elseif err then
-      log:write(string.format("[%s] API error: %s\n", os.date("%Y-%m-%d %H:%M:%S"), err))
-    else
-      log:write(string.format("[%s] API returned unexpected response\n", os.date("%Y-%m-%d %H:%M:%S")))
-    end
-    log:close()
-  end
-
-  return result, err
+  return make_request("GET", endpoint, opts)
 end
 
 function M.get_puzzle(puzzle_id)
@@ -121,14 +105,6 @@ function M.submit_puzzle_round(puzzle_id, win, theme)
   theme = theme or "mix"
   local endpoint = string.format("/api/training/complete/%s/%s", theme, puzzle_id)
 
-  -- Debug logging
-  local log = io.open("/tmp/nvim-chess-debug.log", "a")
-  if log then
-    log:write(string.format("[%s] Submitting puzzle round: %s (win: %s, theme: %s)\n", os.date("%Y-%m-%d %H:%M:%S"), puzzle_id, tostring(win), theme))
-    log:write(string.format("[%s] Endpoint: POST %s\n", os.date("%Y-%m-%d %H:%M:%S"), endpoint))
-    log:close()
-  end
-
   -- The endpoint expects a POST with win parameter in the body
   local body = string.format("win=%s", win and "true" or "false")
   local opts = {
@@ -137,19 +113,7 @@ function M.submit_puzzle_round(puzzle_id, win, theme)
   }
   opts.headers["Content-Type"] = "application/x-www-form-urlencoded"
 
-  local result, err = make_request("POST", endpoint, opts)
-
-  if log then
-    log = io.open("/tmp/nvim-chess-debug.log", "a")
-    if err then
-      log:write(string.format("[%s] Submit error: %s\n", os.date("%Y-%m-%d %H:%M:%S"), err))
-    else
-      log:write(string.format("[%s] Submit successful\n", os.date("%Y-%m-%d %H:%M:%S")))
-    end
-    log:close()
-  end
-
-  return result, err
+  return make_request("POST", endpoint, opts)
 end
 
 -- Account API (for authentication validation)

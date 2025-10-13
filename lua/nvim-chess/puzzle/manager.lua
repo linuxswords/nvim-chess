@@ -286,19 +286,6 @@ function M.get_next_puzzle(skip_confirmation)
     vim.notify("Puzzle skipped (tracked locally only)", vim.log.levels.INFO)
   end
 
-  -- Debug: log before fetching
-  local log_file = "/tmp/nvim-chess-debug.log"
-  local log = io.open(log_file, "a")
-  if log then
-    log:write(string.format("[%s] ========== get_next_puzzle called ==========\n", os.date("%Y-%m-%d %H:%M:%S")))
-    if current_puzzle then
-      log:write(string.format("[%s] Current puzzle before fetch: %s (rating: %d)\n", os.date("%Y-%m-%d %H:%M:%S"), current_puzzle.id, current_puzzle.rating))
-    else
-      log:write(string.format("[%s] No current puzzle before fetch\n", os.date("%Y-%m-%d %H:%M:%S")))
-    end
-    log:close()
-  end
-
   local puzzle_data, error = api.get_next_puzzle()
 
   if error then
@@ -307,22 +294,7 @@ function M.get_next_puzzle(skip_confirmation)
   end
 
   if puzzle_data and puzzle_data.puzzle then
-    -- Debug: log the fetched puzzle
-    log = io.open(log_file, "a")
-    if log then
-      log:write(string.format("[%s] Fetched puzzle from API: %s (rating: %d)\n", os.date("%Y-%m-%d %H:%M:%S"), puzzle_data.puzzle.id, puzzle_data.puzzle.rating))
-      log:close()
-    end
-
     current_puzzle = parse_puzzle(puzzle_data.puzzle, puzzle_data.game)
-
-    -- Debug: log after parsing
-    log = io.open(log_file, "a")
-    if log then
-      log:write(string.format("[%s] Current puzzle after parse: %s (rating: %d)\n", os.date("%Y-%m-%d %H:%M:%S"), current_puzzle.id, current_puzzle.rating))
-      log:write(string.format("[%s] ========== get_next_puzzle completed ==========\n\n", os.date("%Y-%m-%d %H:%M:%S")))
-      log:close()
-    end
 
     vim.notify(string.format("Puzzle (Rating: %d)", current_puzzle.rating), vim.log.levels.INFO)
 
@@ -489,68 +461,28 @@ function M.show_puzzle()
   local in_puzzle_buffer = current_buf_name:match("puzzle%-")
   local old_puzzle_buf = current_buf
 
-  -- Debug logging to file
-  local log_file = "/tmp/nvim-chess-debug.log"
-  local log = io.open(log_file, "a")
-  if log then
-    log:write(string.format("[%s] ========== show_puzzle called ==========\n", os.date("%Y-%m-%d %H:%M:%S")))
-    log:write(string.format("[%s] Current buf: %s (id: %d)\n", os.date("%Y-%m-%d %H:%M:%S"), current_buf_name, current_buf))
-    log:write(string.format("[%s] New buf name: %s (id: %d)\n", os.date("%Y-%m-%d %H:%M:%S"), buf_name, buf))
-    log:write(string.format("[%s] in_puzzle_buffer: %s\n", os.date("%Y-%m-%d %H:%M:%S"), tostring(in_puzzle_buffer)))
-  end
-
   -- Open in new window if not already visible, otherwise reuse current window if it's a puzzle
   local win = vim.fn.bufwinid(buf)
-
-  if log then
-    log:write(string.format("[%s] New buf visible in win: %d\n", os.date("%Y-%m-%d %H:%M:%S"), win))
-  end
 
   if win == -1 then
     -- Buffer not visible anywhere
     if in_puzzle_buffer then
       -- We're in a puzzle buffer, reuse current window
-      if log then
-        log:write(string.format("[%s] Switching window to new buffer...\n", os.date("%Y-%m-%d %H:%M:%S")))
-      end
-
-      -- First switch to the new buffer, then delete the old one
       vim.api.nvim_win_set_buf(current_win, buf)
       vim.api.nvim_set_current_win(current_win)
 
-      local buf_after_switch = vim.api.nvim_win_get_buf(current_win)
-      local buf_name_after_switch = vim.api.nvim_buf_get_name(buf_after_switch)
-
-      if log then
-        log:write(string.format("[%s] Window switched. Current buf after switch: %s (id: %d)\n", os.date("%Y-%m-%d %H:%M:%S"), buf_name_after_switch, buf_after_switch))
-      end
-
       -- Delete the old puzzle buffer if it's different from the new one
       if vim.api.nvim_buf_is_valid(old_puzzle_buf) and old_puzzle_buf ~= buf then
-        if log then
-          log:write(string.format("[%s] Deleting old buffer: %d\n", os.date("%Y-%m-%d %H:%M:%S"), old_puzzle_buf))
-        end
         vim.api.nvim_buf_delete(old_puzzle_buf, { force = true })
       end
     else
       -- Not in a puzzle buffer, create new split
-      if log then
-        log:write(string.format("[%s] Creating new split\n", os.date("%Y-%m-%d %H:%M:%S")))
-      end
       vim.cmd("split")
       vim.api.nvim_win_set_buf(0, buf)
     end
   else
     -- Buffer is already visible, switch to it
-    if log then
-      log:write(string.format("[%s] Buffer already visible, switching to window %d\n", os.date("%Y-%m-%d %H:%M:%S"), win))
-    end
     vim.api.nvim_set_current_win(win)
-  end
-
-  if log then
-    log:write(string.format("[%s] ========== show_puzzle completed ==========\n\n", os.date("%Y-%m-%d %H:%M:%S")))
-    log:close()
   end
 
   -- Set up buffer-local keymaps for puzzle solving
