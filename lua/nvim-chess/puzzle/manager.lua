@@ -266,6 +266,19 @@ function M.get_next_puzzle()
     vim.notify("Getting random puzzle (authenticate for rating-matched puzzles)", vim.log.levels.WARN)
   end
 
+  -- Debug: log before fetching
+  local log_file = "/tmp/nvim-chess-debug.log"
+  local log = io.open(log_file, "a")
+  if log then
+    log:write(string.format("[%s] ========== get_next_puzzle called ==========\n", os.date("%Y-%m-%d %H:%M:%S")))
+    if current_puzzle then
+      log:write(string.format("[%s] Current puzzle before fetch: %s (rating: %d)\n", os.date("%Y-%m-%d %H:%M:%S"), current_puzzle.id, current_puzzle.rating))
+    else
+      log:write(string.format("[%s] No current puzzle before fetch\n", os.date("%Y-%m-%d %H:%M:%S")))
+    end
+    log:close()
+  end
+
   local puzzle_data, error = api.get_next_puzzle()
 
   if error then
@@ -274,7 +287,22 @@ function M.get_next_puzzle()
   end
 
   if puzzle_data and puzzle_data.puzzle then
+    -- Debug: log the fetched puzzle
+    log = io.open(log_file, "a")
+    if log then
+      log:write(string.format("[%s] Fetched puzzle from API: %s (rating: %d)\n", os.date("%Y-%m-%d %H:%M:%S"), puzzle_data.puzzle.id, puzzle_data.puzzle.rating))
+      log:close()
+    end
+
     current_puzzle = parse_puzzle(puzzle_data.puzzle, puzzle_data.game)
+
+    -- Debug: log after parsing
+    log = io.open(log_file, "a")
+    if log then
+      log:write(string.format("[%s] Current puzzle after parse: %s (rating: %d)\n", os.date("%Y-%m-%d %H:%M:%S"), current_puzzle.id, current_puzzle.rating))
+      log:write(string.format("[%s] ========== get_next_puzzle completed ==========\n\n", os.date("%Y-%m-%d %H:%M:%S")))
+      log:close()
+    end
 
     vim.notify(string.format("Puzzle (Rating: %d)", current_puzzle.rating), vim.log.levels.INFO)
 
