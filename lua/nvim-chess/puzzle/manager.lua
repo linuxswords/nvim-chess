@@ -439,6 +439,7 @@ function M.show_puzzle()
   local current_buf = vim.api.nvim_win_get_buf(current_win)
   local current_buf_name = vim.api.nvim_buf_get_name(current_buf)
   local in_puzzle_buffer = current_buf_name:match("puzzle%-")
+  local old_puzzle_buf = current_buf
 
   -- Open in new window if not already visible, otherwise reuse current window if it's a puzzle
   local win = vim.fn.bufwinid(buf)
@@ -446,13 +447,14 @@ function M.show_puzzle()
     -- Buffer not visible anywhere
     if in_puzzle_buffer then
       -- We're in a puzzle buffer, reuse current window
-      -- Use vim.schedule to ensure the buffer switch happens after the current callback completes
-      vim.schedule(function()
-        if vim.api.nvim_win_is_valid(current_win) and vim.api.nvim_buf_is_valid(buf) then
-          vim.api.nvim_win_set_buf(current_win, buf)
-          vim.api.nvim_set_current_win(current_win)
-        end
-      end)
+      -- First switch to the new buffer, then delete the old one
+      vim.api.nvim_win_set_buf(current_win, buf)
+      vim.api.nvim_set_current_win(current_win)
+
+      -- Delete the old puzzle buffer if it's different from the new one
+      if vim.api.nvim_buf_is_valid(old_puzzle_buf) and old_puzzle_buf ~= buf then
+        vim.api.nvim_buf_delete(old_puzzle_buf, { force = true })
+      end
     else
       -- Not in a puzzle buffer, create new split
       vim.cmd("split")
