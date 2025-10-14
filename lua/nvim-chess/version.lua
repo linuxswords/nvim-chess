@@ -3,7 +3,7 @@ local M = {}
 local buffer = require("nvim-chess.utils.buffer")
 
 -- Plugin version information
-M.version = "0.4.2"
+M.version = "0.5.0"
 M.name = "nvim-chess"
 M.description = "A Neovim plugin for solving chess puzzles from Lichess.org"
 M.author = "linuxswords"
