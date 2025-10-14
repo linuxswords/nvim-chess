@@ -1,549 +1,336 @@
+-- Puzzle manager - Coordinates puzzle modules
+-- Handles API interactions and delegates to specialized modules
 local M = {}
 
 local api = require("nvim-chess.api.client")
 local auth = require("nvim-chess.auth.manager")
 local pgn_converter = require("nvim-chess.chess.pgn_converter")
-local engine = require("nvim-chess.chess.engine")
-local move_executor = require("nvim-chess.chess.move_executor")
 local buffer = require("nvim-chess.utils.buffer")
-
--- Active puzzle storage
-local current_puzzle = nil
-local puzzle_history = {}
+local state = require("nvim-chess.puzzle.state")
+local solver = require("nvim-chess.puzzle.solver")
+local renderer = require("nvim-chess.puzzle.renderer")
 
 -- Helper function to get FEN from game PGN
--- Converts PGN moves to FEN at the puzzle's starting position
 local function get_fen_from_game(game_data, initial_ply)
-  if not game_data or not game_data.pgn then
-    return nil
-  end
+	if not game_data or not game_data.pgn then
+		return nil
+	end
 
-  -- Convert PGN to FEN at the puzzle's starting position
-  -- Lichess initialPly is 0-based, but our move array is 1-based, so add 1
-  local target_ply = (initial_ply or 0) + 1
-  local fen, err = pgn_converter.pgn_to_fen(game_data.pgn, target_ply)
+	local target_ply = (initial_ply or 0) + 1
+	local fen, err = pgn_converter.pgn_to_fen(game_data.pgn, target_ply)
 
-  if not fen then
-    vim.notify("Warning: Could not generate FEN from PGN: " .. (err or "unknown error"), vim.log.levels.WARN)
-    return nil
-  end
+	if not fen then
+		vim.notify("Warning: Could not generate FEN from PGN: " .. (err or "unknown error"), vim.log.levels.WARN)
+		return nil
+	end
 
-  return fen
+	return fen
 end
 
--- Helper function to apply a UCI move to the current puzzle FEN
--- Returns updated FEN or nil on error
-local function apply_uci_move_to_fen(fen, uci_move)
-  if not fen or not uci_move then
-    return nil, "Invalid parameters"
-  end
-
-  -- Parse current FEN into board state
-  local board_state, err = engine.create_board_from_fen(fen)
-  if not board_state then
-    return nil, "Failed to parse FEN: " .. (err or "unknown error")
-  end
-
-  -- Execute the UCI move using the unified move executor
-  local updated_state, move_err = move_executor.execute_uci_move(board_state, uci_move)
-  if not updated_state then
-    return nil, "Failed to execute move: " .. (move_err or "unknown error")
-  end
-
-  -- Generate new FEN
-  return engine.board_to_fen(updated_state)
-end
-
--- Parse puzzle data and prepare for display
+-- Parse puzzle data from API response
 local function parse_puzzle(puzzle_data, game_data)
-  if not puzzle_data then
-    return nil
-  end
+	if not puzzle_data then
+		return nil
+	end
 
-  -- Get FEN - try from puzzle data first, then from game
-  local fen = puzzle_data.fen or get_fen_from_game(game_data, puzzle_data.initialPly)
+	-- Get FEN
+	local fen = puzzle_data.fen or get_fen_from_game(game_data, puzzle_data.initialPly)
 
-  -- Determine player color from initial FEN (the color to move at puzzle start)
-  local player_color = "White"
-  if fen then
-    local parts = {}
-    for part in fen:gmatch("%S+") do
-      table.insert(parts, part)
-    end
-    if #parts >= 2 then
-      player_color = parts[2] == "w" and "White" or "Black"
-    end
-  end
+	-- Determine player color from FEN
+	local player_color = "White"
+	if fen then
+		local parts = {}
+		for part in fen:gmatch("%S+") do
+			table.insert(parts, part)
+		end
+		if #parts >= 2 then
+			player_color = parts[2] == "w" and "White" or "Black"
+		end
+	end
 
-  return {
-    id = puzzle_data.id,
-    fen = fen,
-    rating = puzzle_data.rating,
-    plays = puzzle_data.plays,
-    themes = puzzle_data.themes or {},
-    solution = puzzle_data.solution or {},
-    initial_ply = puzzle_data.initialPly or 0,
-    current_move_index = 0,
-    moves_made = {},
-    completed = false,
-    success = nil,
-    pgn = game_data and game_data.pgn,
-    game_id = game_data and game_data.id,
-    player_color = player_color, -- Track which color the player is playing as
-  }
+	return {
+		id = puzzle_data.id,
+		fen = fen,
+		rating = puzzle_data.rating,
+		plays = puzzle_data.plays,
+		themes = puzzle_data.themes or {},
+		solution = puzzle_data.solution or {},
+		initial_ply = puzzle_data.initialPly or 0,
+		current_move_index = 0,
+		moves_made = {},
+		completed = false,
+		success = nil,
+		pgn = game_data and game_data.pgn,
+		game_id = game_data and game_data.id,
+		player_color = player_color,
+	}
 end
 
 -- Get daily puzzle
 function M.get_daily_puzzle()
-  local puzzle_data, error = api.get_daily_puzzle()
+	local puzzle_data, error = api.get_daily_puzzle()
 
-  if error then
-    vim.notify("Failed to get daily puzzle: " .. error, vim.log.levels.ERROR)
-    return false
-  end
+	if error then
+		vim.notify("Failed to get daily puzzle: " .. error, vim.log.levels.ERROR)
+		return false
+	end
 
-  if puzzle_data and puzzle_data.puzzle then
-    current_puzzle = parse_puzzle(puzzle_data.puzzle, puzzle_data.game)
+	if puzzle_data and puzzle_data.puzzle then
+		local puzzle = parse_puzzle(puzzle_data.puzzle, puzzle_data.game)
+		state.set_current(puzzle)
 
-    vim.notify(string.format("Daily Puzzle (Rating: %d)", current_puzzle.rating), vim.log.levels.INFO)
-    M.show_puzzle()
-    return true
-  end
+		vim.notify(string.format("Daily Puzzle (Rating: %d)", puzzle.rating), vim.log.levels.INFO)
+		M.show_puzzle()
+		return true
+	end
 
-  return false
+	return false
 end
 
 -- Get next training puzzle
 function M.get_next_puzzle(skip_confirmation)
-  -- Note: The Lichess API does not support submitting puzzle completions via API.
-  -- Authenticated /api/puzzle/next returns the same puzzle because it's meant for the web UI.
-  -- For API usage, we track puzzles locally and always get random puzzles.
+	local current = state.get_current()
 
-  -- Check if there's an unsolved puzzle
-  if current_puzzle and not current_puzzle.completed and not skip_confirmation then
-    -- Prompt user for confirmation
-    local response = vim.fn.input("Current puzzle is not solved. Skip and mark as failed locally? (y/N): ")
-    if response:lower() ~= "y" then
-      vim.notify("Staying on current puzzle", vim.log.levels.INFO)
-      return false
-    end
+	-- Check if there's an unsolved puzzle
+	if current and not current.completed and not skip_confirmation then
+		local response = vim.fn.input("Current puzzle is not solved. Skip and mark as failed locally? (y/N): ")
+		if response:lower() ~= "y" then
+			vim.notify("Staying on current puzzle", vim.log.levels.INFO)
+			return false
+		end
 
-    -- Mark current puzzle as failed locally
-    current_puzzle.completed = true
-    current_puzzle.success = false
-    table.insert(puzzle_history, {
-      id = current_puzzle.id,
-      success = false,
-      moves = vim.deepcopy(current_puzzle.moves_made),
-      skipped = true,
-    })
+		-- Mark as failed
+		current.completed = true
+		current.success = false
+		state.add_to_history({
+			id = current.id,
+			success = false,
+			moves = vim.deepcopy(current.moves_made),
+			skipped = true,
+		})
+		vim.notify("Puzzle skipped (tracked locally only)", vim.log.levels.INFO)
+	end
 
-    vim.notify("Puzzle skipped (tracked locally only)", vim.log.levels.INFO)
-  end
+	local puzzle_data, error = api.get_next_puzzle()
 
-  local puzzle_data, error = api.get_next_puzzle()
+	if error then
+		vim.notify("Failed to get puzzle: " .. error, vim.log.levels.ERROR)
+		return false
+	end
 
-  if error then
-    vim.notify("Failed to get puzzle: " .. error, vim.log.levels.ERROR)
-    return false
-  end
+	if puzzle_data and puzzle_data.puzzle then
+		local puzzle = parse_puzzle(puzzle_data.puzzle, puzzle_data.game)
+		state.set_current(puzzle)
 
-  if puzzle_data and puzzle_data.puzzle then
-    current_puzzle = parse_puzzle(puzzle_data.puzzle, puzzle_data.game)
+		vim.notify(string.format("Puzzle (Rating: %d)", puzzle.rating), vim.log.levels.INFO)
+		M.show_puzzle()
+		return true
+	end
 
-    vim.notify(string.format("Puzzle (Rating: %d)", current_puzzle.rating), vim.log.levels.INFO)
-
-    M.show_puzzle()
-    return true
-  end
-
-  return false
+	return false
 end
 
 -- Get specific puzzle by ID
 function M.get_puzzle(puzzle_id)
-  local puzzle_data, error = api.get_puzzle(puzzle_id)
+	local puzzle_data, error = api.get_puzzle(puzzle_id)
 
-  if error then
-    vim.notify("Failed to get puzzle: " .. error, vim.log.levels.ERROR)
-    return false
-  end
+	if error then
+		vim.notify("Failed to get puzzle: " .. error, vim.log.levels.ERROR)
+		return false
+	end
 
-  if puzzle_data and puzzle_data.puzzle then
-    current_puzzle = parse_puzzle(puzzle_data.puzzle, puzzle_data.game)
+	if puzzle_data and puzzle_data.puzzle then
+		local puzzle = parse_puzzle(puzzle_data.puzzle, puzzle_data.game)
+		state.set_current(puzzle)
 
-    vim.notify(string.format("Puzzle %s (Rating: %d)", puzzle_id, current_puzzle.rating), vim.log.levels.INFO)
-    M.show_puzzle()
-    return true
-  end
+		vim.notify(string.format("Puzzle %s (Rating: %d)", puzzle_id, puzzle.rating), vim.log.levels.INFO)
+		M.show_puzzle()
+		return true
+	end
 
-  return false
+	return false
 end
 
 -- Show puzzle board
 function M.show_puzzle()
-  if not current_puzzle then
-    vim.notify("No active puzzle", vim.log.levels.ERROR)
-    return false
-  end
+	local current_puzzle = state.get_current()
+	if not current_puzzle then
+		vim.notify("No active puzzle", vim.log.levels.ERROR)
+		return false
+	end
 
-  -- Create or focus puzzle buffer
-  local buf = buffer.create_or_get("puzzle-" .. current_puzzle.id)
+	-- Create buffer and render
+	local buf = renderer.create_puzzle_buffer(current_puzzle.id)
+	local display_lines = renderer.render_puzzle(current_puzzle)
+	buffer.set_lines(buf, display_lines)
 
-  -- Render board
-  local board_fen = current_puzzle.fen
-  local board_state = board_fen and engine.create_board_from_fen(board_fen)
-  local board = board_state and board_state.position
-  local display_lines
+	-- Setup keymaps
+	renderer.setup_keymaps(buf, {
+		on_move = M.attempt_move,
+		on_hint = M.show_hint,
+		on_solution = M.show_solution,
+		on_next = M.get_next_puzzle,
+		on_refresh = M.show_puzzle,
+	})
 
-  if board then
-    -- Render board - flip if player is black so they see from their perspective
-    local player_color = current_puzzle.player_color or "White"
-    local flip = (player_color == "Black")
-    local render_board = function(board_data, should_flip)
-      -- Note: Using filled symbols for white, outlined for black for better contrast
-      local pieces = {
-        white = { king = "♚", queen = "♛", rook = "♜", bishop = "♝", knight = "♞", pawn = "♟" },
-        black = { king = "♔", queen = "♕", rook = "♖", bishop = "♗", knight = "♘", pawn = "♙" },
-      }
+	-- Show in window
+	local old_buf = current_puzzle.buffer
+	renderer.show_in_window(buf, old_buf)
 
-      local lines = {}
-      local file_labels = should_flip and "  h g f e d c b a" or "  a b c d e f g h"
-      table.insert(lines, file_labels)
-
-      for rank_idx = 1, 8 do
-        -- When not flipped (white perspective): rank_idx 1→8 maps to rank 8→1 (top to bottom)
-        -- When flipped (black perspective): rank_idx 1→8 maps to rank 1→8 (top to bottom)
-        local actual_rank = should_flip and rank_idx or (9 - rank_idx)
-
-        local line = tostring(actual_rank) .. " "
-
-        for file_idx = 1, 8 do
-          local file = should_flip and (9 - file_idx) or file_idx
-          local piece = board_data[actual_rank] and board_data[actual_rank][file]
-
-          if piece then
-            line = line .. pieces[piece.color][piece.type] .. " "
-          else
-            local is_light = (actual_rank + file) % 2 == 0
-            line = line .. (is_light and "·" or " ") .. " "
-          end
-        end
-
-        line = line .. " " .. tostring(actual_rank)
-        table.insert(lines, line)
-      end
-
-      table.insert(lines, file_labels)
-      return lines
-    end
-
-    local board_lines = render_board(board, flip)
-
-    -- Create info panel for right side
-    local info_panel = {
-      "┌─ 🧩 LICHESS PUZZLE ─────────┐",
-      "│                             │",
-      "│ ID:     " .. string.format("%-18s", current_puzzle.id) .. "│",
-      "│ Rating: " .. string.format("%-18s", tostring(current_puzzle.rating)) .. "│",
-      "│ Plays:  " .. string.format("%-18s", tostring(current_puzzle.plays or "N/A")) .. "│",
-      "│                             │",
-      "│ Task: " .. string.format("%-20s", "Find best move") .. "│",
-      "│       " .. string.format("%-20s", "for " .. player_color) .. "│",
-      "│                             │",
-      "├─ CONTROLS ──────────────────┤",
-      "│ (m) Make move               │",
-      "│ (h) Show hint               │",
-      "│ (s) Show solution           │",
-      "│ (>) Next puzzle             │",
-      "│ (q) Quit                    │",
-      "└─────────────────────────────┘",
-    }
-
-    -- Add moves if any
-    if #current_puzzle.moves_made > 0 then
-      table.insert(info_panel, "")
-      table.insert(info_panel, "Moves made:")
-      table.insert(info_panel, table.concat(current_puzzle.moves_made, " → "))
-    end
-
-    -- Combine board and info side by side
-    display_lines = {}
-    for i = 1, math.max(#board_lines, #info_panel) do
-      local board_part = board_lines[i] or string.rep(" ", 20)
-      local info_part = info_panel[i] or ""
-      table.insert(display_lines, board_part .. "   " .. info_part)
-    end
-  else
-    -- FEN not available - show link to puzzle on Lichess
-    display_lines = {
-      "⚠ Board display not available",
-      "",
-    }
-    if current_puzzle.game_id then
-      table.insert(display_lines, "View puzzle on Lichess:")
-      table.insert(display_lines, string.format("https://lichess.org/training/%s", current_puzzle.id))
-      table.insert(display_lines, "")
-      if current_puzzle.pgn then
-        table.insert(display_lines, "PGN: " .. current_puzzle.pgn)
-      end
-    else
-      table.insert(display_lines, "FEN not available from API")
-    end
-  end
-
-  buffer.set_lines(buf, display_lines)
-
-  -- Check if we're already in a puzzle buffer and reuse that window
-  local current_win = vim.api.nvim_get_current_win()
-  local current_buf = vim.api.nvim_win_get_buf(current_win)
-  local current_buf_name = vim.api.nvim_buf_get_name(current_buf)
-  local in_puzzle_buffer = current_buf_name:match("puzzle%-")
-  local old_puzzle_buf = current_buf
-
-  -- Open in new window if not already visible, otherwise reuse current window if it's a puzzle
-  local win = vim.fn.bufwinid(buf)
-
-  if win == -1 then
-    -- Buffer not visible anywhere
-    if in_puzzle_buffer then
-      -- We're in a puzzle buffer, reuse current window
-      vim.api.nvim_win_set_buf(current_win, buf)
-      vim.api.nvim_set_current_win(current_win)
-
-      -- Delete the old puzzle buffer if it's different from the new one
-      if vim.api.nvim_buf_is_valid(old_puzzle_buf) and old_puzzle_buf ~= buf then
-        vim.api.nvim_buf_delete(old_puzzle_buf, { force = true })
-      end
-    else
-      -- Not in a puzzle buffer, create new split
-      vim.cmd("split")
-      vim.api.nvim_win_set_buf(0, buf)
-    end
-  else
-    -- Buffer is already visible, switch to it
-    vim.api.nvim_set_current_win(win)
-  end
-
-  -- Set up buffer-local keymaps for puzzle solving
-  local opts = { buffer = buf, noremap = true, silent = true }
-
-  vim.keymap.set("n", "q", "<cmd>q<cr>", opts)
-
-  vim.keymap.set("n", "m", function()
-    local move = vim.fn.input("Enter move (e.g., e2e4): ")
-    if move and move ~= "" then
-      M.attempt_move(move)
-    end
-  end, opts)
-
-  vim.keymap.set("n", "h", function()
-    M.show_hint()
-  end, opts)
-
-  vim.keymap.set("n", "s", function()
-    M.show_solution()
-  end, opts)
-
-  vim.keymap.set("n", ">", function()
-    M.get_next_puzzle()
-  end, opts)
-
-  vim.keymap.set("n", "<C-r>", function()
-    M.show_puzzle()
-  end, opts)
-
-  current_puzzle.buffer = buf
-  return buf
+	current_puzzle.buffer = buf
+	return buf
 end
 
 -- Attempt a move on the puzzle
 function M.attempt_move(move)
-  if not current_puzzle then
-    vim.notify("No active puzzle", vim.log.levels.ERROR)
-    return false
-  end
+	local current_puzzle = state.get_current()
+	if not current_puzzle then
+		vim.notify("No active puzzle", vim.log.levels.ERROR)
+		return false
+	end
 
-  if current_puzzle.completed then
-    vim.notify("Puzzle already completed", vim.log.levels.WARN)
-    return false
-  end
+	-- Validate move format
+	if not move:match("^[a-h][1-8][a-h][1-8][qrbn]?$") then
+		vim.notify("Invalid move format. Use format like 'e2e4'", vim.log.levels.ERROR)
+		return false
+	end
 
-  -- Validate move format
-  if not move:match("^[a-h][1-8][a-h][1-8][qrbn]?$") then
-    vim.notify("Invalid move format. Use format like 'e2e4'", vim.log.levels.ERROR)
-    return false
-  end
+	-- Apply move
+	local updated_puzzle, success, message = solver.apply_move(current_puzzle, move)
+	state.set_current(updated_puzzle)
 
-  local expected_move = current_puzzle.solution[current_puzzle.current_move_index + 1]
+	if not success then
+		-- Wrong move or error
+		state.add_to_history({
+			id = updated_puzzle.id,
+			success = false,
+			moves = vim.deepcopy(updated_puzzle.moves_made),
+		})
 
-  if move == expected_move then
-    -- Correct move
-    current_puzzle.current_move_index = current_puzzle.current_move_index + 1
-    table.insert(current_puzzle.moves_made, move)
+		local expected = updated_puzzle.solution[#updated_puzzle.moves_made + 1]
+		vim.notify("✗ Wrong move! Expected: " .. expected .. ". Press 's' for solution.", vim.log.levels.ERROR)
+		return false
+	end
 
-    -- Update the FEN with the move
-    local new_fen, err = apply_uci_move_to_fen(current_puzzle.fen, move)
-    if new_fen then
-      current_puzzle.fen = new_fen
-    else
-      vim.notify("Warning: Could not update board: " .. (err or "unknown error"), vim.log.levels.WARN)
-    end
+	-- Correct move
+	M.show_puzzle() -- Refresh display
 
-    -- Refresh the board display
-    M.show_puzzle()
+	if updated_puzzle.completed then
+		-- Puzzle solved!
+		state.add_to_history({
+			id = updated_puzzle.id,
+			success = true,
+			moves = vim.deepcopy(updated_puzzle.moves_made),
+		})
+		vim.notify("✓ Puzzle solved! Press '>' for next puzzle.", vim.log.levels.INFO)
+	else
+		vim.notify("✓ Correct! Continue...", vim.log.levels.INFO)
 
-    if current_puzzle.current_move_index >= #current_puzzle.solution then
-      -- Puzzle solved!
-      current_puzzle.completed = true
-      current_puzzle.success = true
-      table.insert(puzzle_history, {
-        id = current_puzzle.id,
-        success = true,
-        moves = vim.deepcopy(current_puzzle.moves_made),
-      })
+		-- Auto-play opponent's response
+		local opponent_puzzle, opponent_move, err = solver.apply_opponent_move(updated_puzzle)
+		if opponent_move then
+			state.set_current(opponent_puzzle)
+			vim.notify("Opponent plays: " .. opponent_move, vim.log.levels.INFO)
+			M.show_puzzle() -- Refresh with opponent's move
+		elseif err then
+			vim.notify("Warning: Could not apply opponent move: " .. err, vim.log.levels.WARN)
+		end
+	end
 
-      vim.notify("✓ Puzzle solved! Press '>' for next puzzle.", vim.log.levels.INFO)
-
-      -- Note: Lichess API doesn't support submitting puzzle results
-      -- Results are tracked locally only
-    else
-      vim.notify("✓ Correct! Continue...", vim.log.levels.INFO)
-      -- Auto-play opponent's response if available
-      if current_puzzle.current_move_index < #current_puzzle.solution then
-        local opponent_move = current_puzzle.solution[current_puzzle.current_move_index + 1]
-        vim.notify("Opponent plays: " .. opponent_move, vim.log.levels.INFO)
-        current_puzzle.current_move_index = current_puzzle.current_move_index + 1
-
-        -- Update FEN with opponent's move
-        local opponent_fen, opponent_err = apply_uci_move_to_fen(current_puzzle.fen, opponent_move)
-        if opponent_fen then
-          current_puzzle.fen = opponent_fen
-        else
-          vim.notify(
-            "Warning: Could not update board with opponent move: " .. (opponent_err or "unknown error"),
-            vim.log.levels.WARN
-          )
-        end
-
-        -- Refresh board to show opponent's move
-        M.show_puzzle()
-      end
-    end
-  else
-    -- Wrong move
-    current_puzzle.completed = true
-    current_puzzle.success = false
-    table.insert(puzzle_history, {
-      id = current_puzzle.id,
-      success = false,
-      moves = vim.deepcopy(current_puzzle.moves_made),
-    })
-
-    vim.notify("✗ Wrong move! Expected: " .. expected_move .. ". Press 's' for solution.", vim.log.levels.ERROR)
-
-    -- Note: Lichess API doesn't support submitting puzzle results
-    -- Results are tracked locally only
-  end
-
-  return true
+	return true
 end
 
--- Show hint (first move of solution)
+-- Show hint
 function M.show_hint()
-  if not current_puzzle then
-    vim.notify("No active puzzle", vim.log.levels.ERROR)
-    return
-  end
+	local current_puzzle = state.get_current()
+	if not current_puzzle then
+		vim.notify("No active puzzle", vim.log.levels.ERROR)
+		return
+	end
 
-  if current_puzzle.completed then
-    vim.notify("Puzzle already completed", vim.log.levels.WARN)
-    return
-  end
+	if current_puzzle.completed then
+		vim.notify("Puzzle already completed", vim.log.levels.WARN)
+		return
+	end
 
-  local next_move = current_puzzle.solution[current_puzzle.current_move_index + 1]
-  if next_move then
-    local from = next_move:sub(1, 2)
-    local to = next_move:sub(3, 4)
-    vim.notify(string.format("Hint: Move from %s to %s", from, to), vim.log.levels.INFO)
-  end
+	local from, to, err = solver.get_hint(current_puzzle)
+	if err then
+		vim.notify(err, vim.log.levels.WARN)
+	elseif from and to then
+		vim.notify(string.format("Hint: Move from %s to %s", from, to), vim.log.levels.INFO)
+	end
 end
 
 -- Show full solution
 function M.show_solution()
-  if not current_puzzle then
-    vim.notify("No active puzzle", vim.log.levels.ERROR)
-    return
-  end
+	local current_puzzle = state.get_current()
+	if not current_puzzle then
+		vim.notify("No active puzzle", vim.log.levels.ERROR)
+		return
+	end
 
-  local solution_str = table.concat(current_puzzle.solution, " → ")
-  vim.notify("Solution: " .. solution_str, vim.log.levels.INFO)
+	local solution_str = solver.get_solution_string(current_puzzle)
+	vim.notify("Solution: " .. solution_str, vim.log.levels.INFO)
 
-  current_puzzle.completed = true
-  current_puzzle.success = false
-
-  -- Note: Lichess API doesn't support submitting puzzle results
-  -- Results are tracked locally only
+	solver.mark_given_up(current_puzzle)
+	state.set_current(current_puzzle)
 end
 
--- Submit solution to Lichess (requires authentication)
+-- Submit solution to Lichess (placeholder)
 function M.submit_solution()
-  if not auth.is_authenticated() then
-    return false
-  end
+	if not auth.is_authenticated() then
+		return false
+	end
 
-  if not current_puzzle then
-    return false
-  end
+	if not state.has_current() then
+		return false
+	end
 
-  -- This would call api.submit_puzzle_solution if implemented
-  -- For now, just track locally
-  return true
+	-- This would call API if implemented
+	return true
 end
 
 -- Get puzzle activity/history
 function M.get_puzzle_activity()
-  if not auth.is_authenticated() then
-    vim.notify("Authentication required for puzzle activity", vim.log.levels.ERROR)
-    return false
-  end
+	if not auth.is_authenticated() then
+		vim.notify("Authentication required for puzzle activity", vim.log.levels.ERROR)
+		return false
+	end
 
-  local activity, error = api.get_puzzle_activity()
+	local activity, error = api.get_puzzle_activity()
 
-  if error then
-    vim.notify("Failed to get puzzle activity: " .. error, vim.log.levels.ERROR)
-    return false
-  end
+	if error then
+		vim.notify("Failed to get puzzle activity: " .. error, vim.log.levels.ERROR)
+		return false
+	end
 
-  if activity then
-    -- Display activity in a buffer
-    local buf = buffer.create_or_get("puzzle-activity")
+	if activity then
+		local buf = buffer.create_or_get("puzzle-activity")
+		local lines = { "Puzzle Activity:", "================", "" }
 
-    local lines = { "Puzzle Activity:", "================", "" }
+		for _, entry in ipairs(activity) do
+			table.insert(
+				lines,
+				string.format("Puzzle #%s - %s - Rating: %d", entry.id, entry.win and "Solved" or "Failed", entry.rating or 0)
+			)
+		end
 
-    for _, entry in ipairs(activity) do
-      table.insert(
-        lines,
-        string.format("Puzzle #%s - %s - Rating: %d", entry.id, entry.win and "Solved" or "Failed", entry.rating or 0)
-      )
-    end
+		buffer.set_lines(buf, lines)
+		buffer.show_in_window(buf)
+		return true
+	end
 
-    buffer.set_lines(buf, lines)
-    buffer.show_in_window(buf)
-    return true
-  end
-
-  return false
+	return false
 end
 
 -- Get current puzzle
 function M.get_current_puzzle()
-  return current_puzzle
+	return state.get_current()
 end
 
 -- Get puzzle history
 function M.get_history()
-  return puzzle_history
+	return state.get_history()
 end
 
 return M
