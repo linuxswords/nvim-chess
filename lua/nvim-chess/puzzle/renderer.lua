@@ -36,19 +36,36 @@ local function apply_board_highlights(buf, board_data, should_flip)
 			local file = should_flip and (9 - file_idx) or file_idx
 			local piece = board_data[actual_rank] and board_data[actual_rank][file]
 
-			-- Calculate column position (2 for rank label, then 2 chars per square)
-			local col_start = 2 + (file_idx - 1) * 2
-			local col_end = col_start + 1
+			-- Board format: "8 ♜ ♞ ♝ ♛ ♚ ♝ ♞ ♜  8"
+			-- Position: rank_num(1) + space(1) + squares...
+			-- Each square: piece_char + space
+			-- Column calculation: 2 (rank label + space) + (file_idx - 1) * 2
+			-- But we need to account for UTF-8 multi-byte chess pieces
+			-- So we'll use byte positions carefully
+
+			-- Since vim highlights use byte positions, and chess pieces are 3-byte UTF-8:
+			-- We need to count actual bytes, not visual columns
+			local byte_pos = 2 -- Start after "8 "
+
+			-- Count bytes up to this file position
+			for f = 1, file_idx - 1 do
+				local prev_piece = board_data[actual_rank] and board_data[actual_rank][should_flip and (9 - f) or f]
+				if prev_piece then
+					byte_pos = byte_pos + 3 + 1 -- 3 bytes for UTF-8 piece + 1 space
+				else
+					byte_pos = byte_pos + 1 + 1 -- 1 byte for dot/space + 1 space
+				end
+			end
 
 			if piece then
-				-- Highlight the piece character
+				-- Highlight the piece character (3 bytes for UTF-8)
 				local hl_group = piece.color == "white" and "ChessWhitePiece" or "ChessBlackPiece"
-				vim.api.nvim_buf_add_highlight(buf, -1, hl_group, line_num, col_start, col_start + 1)
+				vim.api.nvim_buf_add_highlight(buf, -1, hl_group, line_num, byte_pos, byte_pos + 3)
 			else
-				-- Highlight empty square background
+				-- Highlight empty square background (1 byte for dot/space)
 				local is_light = (actual_rank + file) % 2 == 0
 				local hl_group = is_light and "ChessLightSquare" or "ChessDarkSquare"
-				vim.api.nvim_buf_add_highlight(buf, -1, hl_group, line_num, col_start, col_end)
+				vim.api.nvim_buf_add_highlight(buf, -1, hl_group, line_num, byte_pos, byte_pos + 1)
 			end
 		end
 	end
