@@ -5,6 +5,7 @@ local auth = require("nvim-chess.auth.manager")
 local pgn_converter = require("nvim-chess.chess.pgn_converter")
 local engine = require("nvim-chess.chess.engine")
 local move_executor = require("nvim-chess.chess.move_executor")
+local buffer = require("nvim-chess.utils.buffer")
 
 -- Active puzzle storage
 local current_puzzle = nil
@@ -187,21 +188,7 @@ function M.show_puzzle()
   end
 
   -- Create or focus puzzle buffer
-  local buf_name = "puzzle-" .. current_puzzle.id
-  local existing_buf = vim.fn.bufnr(buf_name)
-
-  local buf
-  if existing_buf == -1 then
-    buf = vim.api.nvim_create_buf(false, true)
-    vim.api.nvim_buf_set_name(buf, buf_name)
-  else
-    buf = existing_buf
-  end
-
-  -- Set buffer options
-  vim.api.nvim_set_option_value("buftype", "nofile", { buf = buf })
-  vim.api.nvim_set_option_value("bufhidden", "hide", { buf = buf })
-  vim.api.nvim_set_option_value("swapfile", false, { buf = buf })
+  local buf = buffer.create_or_get("puzzle-" .. current_puzzle.id)
 
   -- Render board
   local board_fen = current_puzzle.fen
@@ -305,9 +292,7 @@ function M.show_puzzle()
     end
   end
 
-  vim.api.nvim_set_option_value("modifiable", true, { buf = buf })
-  vim.api.nvim_buf_set_lines(buf, 0, -1, false, display_lines)
-  vim.api.nvim_set_option_value("modifiable", false, { buf = buf })
+  buffer.set_lines(buf, display_lines)
 
   -- Check if we're already in a puzzle buffer and reuse that window
   local current_win = vim.api.nvim_get_current_win()
@@ -532,8 +517,7 @@ function M.get_puzzle_activity()
 
   if activity then
     -- Display activity in a buffer
-    local buf = vim.api.nvim_create_buf(false, true)
-    vim.api.nvim_buf_set_name(buf, "puzzle-activity")
+    local buf = buffer.create_or_get("puzzle-activity")
 
     local lines = { "Puzzle Activity:", "================", "" }
 
@@ -544,13 +528,8 @@ function M.get_puzzle_activity()
       )
     end
 
-    vim.api.nvim_set_option_value("buftype", "nofile", { buf = buf })
-    vim.api.nvim_set_option_value("modifiable", true, { buf = buf })
-    vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
-    vim.api.nvim_set_option_value("modifiable", false, { buf = buf })
-
-    vim.cmd("split")
-    vim.api.nvim_win_set_buf(0, buf)
+    buffer.set_lines(buf, lines)
+    buffer.show_in_window(buf)
     return true
   end
 

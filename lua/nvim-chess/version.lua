@@ -1,5 +1,7 @@
 local M = {}
 
+local buffer = require("nvim-chess.utils.buffer")
+
 -- Plugin version information
 M.version = "0.4.2"
 M.name = "nvim-chess"
@@ -48,35 +50,13 @@ function M.show_info()
 	}
 
 	-- Create or reuse info buffer
-	local buf_name = "nvim-chess-info"
-	local existing_buf = vim.fn.bufnr(buf_name)
-
-	local buf
-	if existing_buf == -1 then
-		buf = vim.api.nvim_create_buf(false, true)
-		vim.api.nvim_buf_set_name(buf, buf_name)
-	else
-		buf = existing_buf
-	end
-
-	-- Set buffer options
-	vim.api.nvim_set_option_value("buftype", "nofile", { buf = buf })
-	vim.api.nvim_set_option_value("bufhidden", "hide", { buf = buf })
-	vim.api.nvim_set_option_value("swapfile", false, { buf = buf })
-	vim.api.nvim_set_option_value("modifiable", true, { buf = buf })
+	local buf = buffer.create_or_get("nvim-chess-info")
 
 	-- Update buffer content
-	vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
-	vim.api.nvim_set_option_value("modifiable", false, { buf = buf })
+	buffer.set_lines(buf, lines)
 
 	-- Open in new window if not already visible
-	local win = vim.fn.bufwinid(buf)
-	if win == -1 then
-		vim.cmd("split")
-		vim.api.nvim_win_set_buf(0, buf)
-	else
-		vim.api.nvim_set_current_win(win)
-	end
+	buffer.show_in_window(buf)
 
 	return buf
 end
