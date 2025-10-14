@@ -32,11 +32,17 @@ test-unit:
 	@nvim --headless -c "PlenaryBustedDirectory test/ --exclude=integration" -c "qa"
 
 # Run integration tests (requires LICHESS_TOKEN)
-# Note: Real API integration tests are not yet implemented for the puzzle-focused version
+# Get token from: https://lichess.org/account/oauth/token
 test-integration:
-	@echo "⚠️  Real API integration tests not yet implemented"
-	@echo "   The puzzle_integration_test.lua uses mocks, not real API calls"
-	@echo "   To run mock-based tests: nvim --headless -c 'luafile test/puzzle_integration_test.lua' -c 'qa'"
+	@if [ -z "$$LICHESS_TOKEN" ]; then \
+		echo "⚠️  LICHESS_TOKEN environment variable not set"; \
+		echo "   Integration tests will be skipped (marked as pending)"; \
+		echo "   To run with real API: export LICHESS_TOKEN=your_token"; \
+		echo "   Get token from: https://lichess.org/account/oauth/token"; \
+		echo ""; \
+	fi
+	@echo "Running integration tests..."
+	@nvim --headless -c "PlenaryBustedDirectory test/integration/" -c "qa"
 
 
 # Interactive demo
