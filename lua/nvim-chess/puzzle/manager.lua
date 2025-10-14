@@ -71,7 +71,7 @@ function M.get_daily_puzzle()
 	local puzzle_data, error = api.get_daily_puzzle()
 
 	if error then
-		vim.notify("Failed to get daily puzzle: " .. error, vim.log.levels.ERROR)
+		vim.notify("✗ Failed to get daily puzzle: " .. error, vim.log.levels.ERROR)
 		return false
 	end
 
@@ -79,7 +79,7 @@ function M.get_daily_puzzle()
 		local puzzle = parse_puzzle(puzzle_data.puzzle, puzzle_data.game)
 		state.set_current(puzzle)
 
-		vim.notify(string.format("Daily Puzzle (Rating: %d)", puzzle.rating), vim.log.levels.INFO)
+		vim.notify(string.format("🧩 Daily Puzzle (Rating: %d)", puzzle.rating), vim.log.levels.INFO)
 		M.show_puzzle()
 		return true
 	end
@@ -95,7 +95,7 @@ function M.get_next_puzzle(skip_confirmation)
 	if current and not current.completed and not skip_confirmation then
 		local response = vim.fn.input("Current puzzle is not solved. Skip and mark as failed locally? (y/N): ")
 		if response:lower() ~= "y" then
-			vim.notify("Staying on current puzzle", vim.log.levels.INFO)
+			vim.notify("📌 Staying on current puzzle", vim.log.levels.INFO)
 			return false
 		end
 
@@ -108,13 +108,13 @@ function M.get_next_puzzle(skip_confirmation)
 			moves = vim.deepcopy(current.moves_made),
 			skipped = true,
 		})
-		vim.notify("Puzzle skipped (tracked locally only)", vim.log.levels.INFO)
+		vim.notify("⏭️  Puzzle skipped (tracked locally only)", vim.log.levels.WARN)
 	end
 
 	local puzzle_data, error = api.get_next_puzzle()
 
 	if error then
-		vim.notify("Failed to get puzzle: " .. error, vim.log.levels.ERROR)
+		vim.notify("✗ Failed to get puzzle: " .. error, vim.log.levels.ERROR)
 		return false
 	end
 
@@ -122,7 +122,7 @@ function M.get_next_puzzle(skip_confirmation)
 		local puzzle = parse_puzzle(puzzle_data.puzzle, puzzle_data.game)
 		state.set_current(puzzle)
 
-		vim.notify(string.format("Puzzle (Rating: %d)", puzzle.rating), vim.log.levels.INFO)
+		vim.notify(string.format("🧩 New Puzzle (Rating: %d)", puzzle.rating), vim.log.levels.INFO)
 		M.show_puzzle()
 		return true
 	end
@@ -135,7 +135,7 @@ function M.get_puzzle(puzzle_id)
 	local puzzle_data, error = api.get_puzzle(puzzle_id)
 
 	if error then
-		vim.notify("Failed to get puzzle: " .. error, vim.log.levels.ERROR)
+		vim.notify("✗ Failed to get puzzle: " .. error, vim.log.levels.ERROR)
 		return false
 	end
 
@@ -143,7 +143,7 @@ function M.get_puzzle(puzzle_id)
 		local puzzle = parse_puzzle(puzzle_data.puzzle, puzzle_data.game)
 		state.set_current(puzzle)
 
-		vim.notify(string.format("Puzzle %s (Rating: %d)", puzzle_id, puzzle.rating), vim.log.levels.INFO)
+		vim.notify(string.format("🧩 Puzzle %s (Rating: %d)", puzzle_id, puzzle.rating), vim.log.levels.INFO)
 		M.show_puzzle()
 		return true
 	end
@@ -161,7 +161,7 @@ function M.show_puzzle()
 
 	-- Create buffer and render
 	local buf = renderer.create_puzzle_buffer(current_puzzle.id)
-	local display_lines = renderer.render_puzzle(current_puzzle)
+	local display_lines = renderer.render_puzzle(current_puzzle, buf)
 	buffer.set_lines(buf, display_lines)
 
 	-- Setup keymaps
@@ -185,13 +185,13 @@ end
 function M.attempt_move(move)
 	local current_puzzle = state.get_current()
 	if not current_puzzle then
-		vim.notify("No active puzzle", vim.log.levels.ERROR)
+		vim.notify("✗ No active puzzle", vim.log.levels.ERROR)
 		return false
 	end
 
 	-- Validate move format
 	if not move:match("^[a-h][1-8][a-h][1-8][qrbn]?$") then
-		vim.notify("Invalid move format. Use format like 'e2e4'", vim.log.levels.ERROR)
+		vim.notify("✗ Invalid move format. Use format like 'e2e4'", vim.log.levels.ERROR)
 		return false
 	end
 
@@ -222,7 +222,7 @@ function M.attempt_move(move)
 			success = true,
 			moves = vim.deepcopy(updated_puzzle.moves_made),
 		})
-		vim.notify("✓ Puzzle solved! Press '>' for next puzzle.", vim.log.levels.INFO)
+		vim.notify("🎉 Puzzle solved! Press '>' for next puzzle.", vim.log.levels.INFO)
 	else
 		vim.notify("✓ Correct! Continue...", vim.log.levels.INFO)
 
@@ -230,10 +230,10 @@ function M.attempt_move(move)
 		local opponent_puzzle, opponent_move, err = solver.apply_opponent_move(updated_puzzle)
 		if opponent_move then
 			state.set_current(opponent_puzzle)
-			vim.notify("Opponent plays: " .. opponent_move, vim.log.levels.INFO)
+			vim.notify("🤖 Opponent plays: " .. opponent_move, vim.log.levels.INFO)
 			M.show_puzzle() -- Refresh with opponent's move
 		elseif err then
-			vim.notify("Warning: Could not apply opponent move: " .. err, vim.log.levels.WARN)
+			vim.notify("⚠️  Could not apply opponent move: " .. err, vim.log.levels.WARN)
 		end
 	end
 
@@ -244,20 +244,20 @@ end
 function M.show_hint()
 	local current_puzzle = state.get_current()
 	if not current_puzzle then
-		vim.notify("No active puzzle", vim.log.levels.ERROR)
+		vim.notify("✗ No active puzzle", vim.log.levels.ERROR)
 		return
 	end
 
 	if current_puzzle.completed then
-		vim.notify("Puzzle already completed", vim.log.levels.WARN)
+		vim.notify("⚠️  Puzzle already completed", vim.log.levels.WARN)
 		return
 	end
 
 	local from, to, err = solver.get_hint(current_puzzle)
 	if err then
-		vim.notify(err, vim.log.levels.WARN)
+		vim.notify("⚠️  " .. err, vim.log.levels.WARN)
 	elseif from and to then
-		vim.notify(string.format("Hint: Move from %s to %s", from, to), vim.log.levels.INFO)
+		vim.notify(string.format("💡 Hint: Move from %s to %s", from, to), vim.log.levels.INFO)
 	end
 end
 
@@ -265,12 +265,12 @@ end
 function M.show_solution()
 	local current_puzzle = state.get_current()
 	if not current_puzzle then
-		vim.notify("No active puzzle", vim.log.levels.ERROR)
+		vim.notify("✗ No active puzzle", vim.log.levels.ERROR)
 		return
 	end
 
 	local solution_str = solver.get_solution_string(current_puzzle)
-	vim.notify("Solution: " .. solution_str, vim.log.levels.INFO)
+	vim.notify("📖 Solution: " .. solution_str, vim.log.levels.INFO)
 
 	solver.mark_given_up(current_puzzle)
 	state.set_current(current_puzzle)
@@ -293,14 +293,14 @@ end
 -- Get puzzle activity/history
 function M.get_puzzle_activity()
 	if not auth.is_authenticated() then
-		vim.notify("Authentication required for puzzle activity", vim.log.levels.ERROR)
+		vim.notify("🔒 Authentication required for puzzle activity", vim.log.levels.ERROR)
 		return false
 	end
 
 	local activity, error = api.get_puzzle_activity()
 
 	if error then
-		vim.notify("Failed to get puzzle activity: " .. error, vim.log.levels.ERROR)
+		vim.notify("✗ Failed to get puzzle activity: " .. error, vim.log.levels.ERROR)
 		return false
 	end
 

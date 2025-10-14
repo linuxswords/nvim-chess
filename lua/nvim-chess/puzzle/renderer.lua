@@ -5,6 +5,55 @@ local M = {}
 local engine = require("nvim-chess.chess.engine")
 local buffer = require("nvim-chess.utils.buffer")
 
+-- Define highlight groups for chess pieces and squares
+local function setup_highlights()
+	-- Chess piece highlights
+	vim.api.nvim_set_hl(0, "ChessWhitePiece", { fg = "#FFFFFF", bold = true })
+	vim.api.nvim_set_hl(0, "ChessBlackPiece", { fg = "#000000", bold = true })
+
+	-- Board square highlights (subtle background)
+	vim.api.nvim_set_hl(0, "ChessLightSquare", { bg = "#F0D9B5" })
+	vim.api.nvim_set_hl(0, "ChessDarkSquare", { bg = "#B58863" })
+end
+
+-- Initialize highlights when module loads
+setup_highlights()
+
+-- Apply syntax highlighting to chess pieces in buffer
+-- @param buf number: Buffer handle
+-- @param board_data table: 2D array of pieces
+-- @param should_flip boolean: Whether board is flipped
+local function apply_board_highlights(buf, board_data, should_flip)
+	-- Clear existing highlights
+	vim.api.nvim_buf_clear_namespace(buf, -1, 0, -1)
+
+	-- Skip first line (file labels) and start from line 1 (0-indexed)
+	for rank_idx = 1, 8 do
+		local actual_rank = should_flip and rank_idx or (9 - rank_idx)
+		local line_num = rank_idx -- Line 0 is file labels, so line 1 is first rank
+
+		for file_idx = 1, 8 do
+			local file = should_flip and (9 - file_idx) or file_idx
+			local piece = board_data[actual_rank] and board_data[actual_rank][file]
+
+			-- Calculate column position (2 for rank label, then 2 chars per square)
+			local col_start = 2 + (file_idx - 1) * 2
+			local col_end = col_start + 1
+
+			if piece then
+				-- Highlight the piece character
+				local hl_group = piece.color == "white" and "ChessWhitePiece" or "ChessBlackPiece"
+				vim.api.nvim_buf_add_highlight(buf, -1, hl_group, line_num, col_start, col_start + 1)
+			else
+				-- Highlight empty square background
+				local is_light = (actual_rank + file) % 2 == 0
+				local hl_group = is_light and "ChessLightSquare" or "ChessDarkSquare"
+				vim.api.nvim_buf_add_highlight(buf, -1, hl_group, line_num, col_start, col_end)
+			end
+		end
+	end
+end
+
 -- Render a chess board from board position data
 -- @param board_data table: 2D array of pieces
 -- @param should_flip boolean: Whether to flip board (for black's perspective)
@@ -110,8 +159,9 @@ end
 
 -- Render complete puzzle display
 -- @param puzzle table: Puzzle data
+-- @param buf number|nil: Optional buffer handle for applying highlights
 -- @return table: Array of display lines
-function M.render_puzzle(puzzle)
+function M.render_puzzle(puzzle, buf)
 	if not puzzle.fen then
 		return create_fallback_display(puzzle)
 	end
@@ -126,6 +176,11 @@ function M.render_puzzle(puzzle)
 
 	local board_lines = render_board(board_state.position, should_flip)
 	local info_panel = create_info_panel(puzzle)
+
+	-- Apply highlights if buffer provided
+	if buf then
+		apply_board_highlights(buf, board_state.position, should_flip)
+	end
 
 	return combine_side_by_side(board_lines, info_panel)
 end
