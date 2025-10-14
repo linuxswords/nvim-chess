@@ -185,4 +185,61 @@ function M.update_castling_rights(board_state, piece, from_rank, from_file)
 	end
 end
 
+-- Execute a UCI move on the board state
+-- UCI format: e2e4, e7e8q (source square + dest square + optional promotion)
+function M.execute_uci_move(board_state, uci_move)
+	if not uci_move or #uci_move < 4 then
+		return nil, "Invalid UCI move format"
+	end
+
+	local from_square = uci_move:sub(1, 2)
+	local to_square = uci_move:sub(3, 4)
+	local promotion = uci_move:sub(5, 5)
+
+	-- Validate squares
+	if not from_square:match("^[a-h][1-8]$") or not to_square:match("^[a-h][1-8]$") then
+		return nil, "Invalid square notation in UCI move"
+	end
+
+	local from_file = engine.letter_to_file(from_square:sub(1, 1))
+	local from_rank = tonumber(from_square:sub(2, 2))
+	local to_file = engine.letter_to_file(to_square:sub(1, 1))
+	local to_rank = tonumber(to_square:sub(2, 2))
+
+	local piece = board_state.position[from_rank][from_file]
+	if not piece then
+		return nil, "No piece at " .. from_square
+	end
+
+	-- Check for castling move (king moving 2 squares horizontally)
+	if piece.type == "king" and math.abs(to_file - from_file) == 2 then
+		local castling_side = to_file > from_file and "kingside" or "queenside"
+		return M.execute_castling(board_state, castling_side)
+	end
+
+	-- Build move_data for apply_move
+	local move_data = {
+		from = from_square,
+		to = to_square,
+		promotion = nil,
+	}
+
+	-- Handle promotion
+	if promotion and promotion ~= "" then
+		local promo_map = { q = "queen", r = "rook", b = "bishop", n = "knight" }
+		move_data.promotion = promo_map[promotion]
+		if not move_data.promotion then
+			return nil, "Invalid promotion piece: " .. promotion
+		end
+	end
+
+	-- Check for en passant
+	if piece.type == "pawn" and to_square == board_state.en_passant then
+		move_data.capture = true -- Mark as capture for apply_move
+	end
+
+	-- Execute the move using the existing apply_move function
+	return M.apply_move(board_state, move_data)
+end
+
 return M
