@@ -27,10 +27,14 @@ local function apply_board_highlights(buf, board_data, should_flip)
 	-- Clear existing highlights
 	vim.api.nvim_buf_clear_namespace(buf, -1, 0, -1)
 
-	-- Skip first line (file labels) and start from line 1 (0-indexed)
+	-- Board structure (no border):
+	-- Line 0: file labels
+	-- Lines 1-8: ranks 1-8
+	-- Line 9: file labels
+
 	for rank_idx = 1, 8 do
 		local actual_rank = should_flip and rank_idx or (9 - rank_idx)
-		local line_num = rank_idx -- Line 0 is file labels, so line 1 is first rank
+		local line_num = rank_idx -- Lines 1-8 (0-indexed)
 
 		for file_idx = 1, 8 do
 			local file = should_flip and (9 - file_idx) or file_idx
@@ -38,8 +42,8 @@ local function apply_board_highlights(buf, board_data, should_flip)
 
 			-- Board format: "8 ♜ ♞ ♝ ♛ ♚ ♝ ♞ ♜  8"
 			-- Position: rank_num(1) + space(1) + squares...
-			-- Each square: piece_char + space
-			-- UTF-8 byte lengths: chess pieces = 3 bytes, middle dot · = 2 bytes, space = 1 byte
+			-- Each square: piece_char (3 bytes for UTF-8 or 1 space) + separator space
+			-- UTF-8 byte lengths: chess pieces = 3 bytes, space = 1 byte
 
 			-- Calculate byte position by counting bytes from start of line
 			local byte_pos = 2 -- Start after "8 "
@@ -51,29 +55,24 @@ local function apply_board_highlights(buf, board_data, should_flip)
 				if prev_piece then
 					byte_pos = byte_pos + 3 + 1 -- 3 bytes for UTF-8 chess piece + 1 space
 				else
-					-- Check if it's a light square (has middle dot ·)
-					local is_prev_light = (actual_rank + prev_file) % 2 == 0
-					if is_prev_light then
-						byte_pos = byte_pos + 2 + 1 -- 2 bytes for middle dot · + 1 space
-					else
-						byte_pos = byte_pos + 1 + 1 -- 1 byte for space + 1 space
-					end
+					byte_pos = byte_pos + 1 + 1 -- 1 byte for space + 1 separator space
 				end
 			end
 
+			-- Determine square color for background
+			local is_light = (actual_rank + file) % 2 == 0
+			local bg_hl_group = is_light and "ChessLightSquare" or "ChessDarkSquare"
+
 			if piece then
-				-- Highlight the piece character (3 bytes for UTF-8)
-				local hl_group = piece.color == "white" and "ChessWhitePiece" or "ChessBlackPiece"
-				vim.api.nvim_buf_add_highlight(buf, -1, hl_group, line_num, byte_pos, byte_pos + 3)
+				-- Highlight the piece character with both piece color and square background
+				local piece_hl_group = piece.color == "white" and "ChessWhitePiece" or "ChessBlackPiece"
+				-- Apply background to the entire square (piece + space after it)
+				vim.api.nvim_buf_add_highlight(buf, -1, bg_hl_group, line_num, byte_pos, byte_pos + 4)
+				-- Apply piece color on top
+				vim.api.nvim_buf_add_highlight(buf, -1, piece_hl_group, line_num, byte_pos, byte_pos + 3)
 			else
-				-- Highlight empty square background
-				local is_light = (actual_rank + file) % 2 == 0
-				local hl_group = is_light and "ChessLightSquare" or "ChessDarkSquare"
-				if is_light then
-					vim.api.nvim_buf_add_highlight(buf, -1, hl_group, line_num, byte_pos, byte_pos + 2) -- 2 bytes for ·
-				else
-					vim.api.nvim_buf_add_highlight(buf, -1, hl_group, line_num, byte_pos, byte_pos + 1) -- 1 byte for space
-				end
+				-- Highlight empty square background (2 spaces)
+				vim.api.nvim_buf_add_highlight(buf, -1, bg_hl_group, line_num, byte_pos, byte_pos + 2)
 			end
 		end
 	end
@@ -104,8 +103,8 @@ local function render_board(board_data, should_flip)
 			if piece then
 				line = line .. pieces[piece.color][piece.type] .. " "
 			else
-				local is_light = (actual_rank + file) % 2 == 0
-				line = line .. (is_light and "·" or " ") .. " "
+				-- Empty square - use space, background color will distinguish light/dark
+				line = line .. "  "
 			end
 		end
 
