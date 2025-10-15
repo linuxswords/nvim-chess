@@ -12,11 +12,11 @@ local function setup_highlights()
 	vim.api.nvim_set_hl(0, "ChessWhitePiece", { fg = "#FFFFFF", ctermfg = 15, bold = true })
 	vim.api.nvim_set_hl(0, "ChessBlackPiece", { fg = "#000000", ctermfg = 0, bold = true })
 
-	-- Board square highlights (subtle background)
-	-- Light squares: lighter green background
-	vim.api.nvim_set_hl(0, "ChessLightSquare", { bg = "#6BCD6B", ctermbg = 77 })
-	-- Dark squares: light grey background
-	vim.api.nvim_set_hl(0, "ChessDarkSquare", { bg = "#808080", ctermbg = 244 })
+	-- Board square highlights (classic wood style)
+	-- Light squares: cream/tan background
+	vim.api.nvim_set_hl(0, "ChessLightSquare", { bg = "#F0D9B5", ctermbg = 223 })
+	-- Dark squares: saddle brown background
+	vim.api.nvim_set_hl(0, "ChessDarkSquare", { bg = "#8B4513", ctermbg = 94 })
 end
 
 -- Initialize highlights when module loads
@@ -94,9 +94,10 @@ end
 -- @param should_flip boolean: Whether to flip board (for black's perspective)
 -- @return table: Array of rendered lines
 local function render_board(board_data, should_flip)
+	-- Using filled chess pieces - will be colored via foreground color
 	local pieces = {
 		white = { king = "♚", queen = "♛", rook = "♜", bishop = "♝", knight = "♞", pawn = "♟" },
-		black = { king = "♔", queen = "♕", rook = "♖", bishop = "♗", knight = "♘", pawn = "♙" },
+		black = { king = "♚", queen = "♛", rook = "♜", bishop = "♝", knight = "♞", pawn = "♟" },
 	}
 
 	local lines = {}
