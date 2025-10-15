@@ -51,10 +51,11 @@ local function apply_board_highlights(buf, board_data, should_flip)
 			local file = should_flip and (9 - file_idx) or file_idx
 			local piece = board_data[actual_rank] and board_data[actual_rank][file]
 
-			-- Board format: "8 ♜ ♞ ♝ ♛ ♚ ♝ ♞ ♜  8"
+			-- Board format: "8  ♜   ♞   ♝   ♛   ♚   ♝   ♞   ♜   8"
 			-- Position: rank_num(1) + space(1) + squares...
-			-- Each square: piece_char (3 bytes for UTF-8 or 1 space) + separator space
-			-- UTF-8 byte lengths: chess pieces = 3 bytes, space = 1 byte
+			-- Each square: 4 characters total
+			-- With piece: space(1) + piece(3 bytes UTF-8) + space(1) + space(1)
+			-- Empty: space(1) + space(1) + space(1) + space(1)
 
 			-- Calculate byte position by counting bytes from start of line
 			local byte_pos = 2 -- Start after "8 "
@@ -64,9 +65,9 @@ local function apply_board_highlights(buf, board_data, should_flip)
 				local prev_file = should_flip and (9 - f) or f
 				local prev_piece = board_data[actual_rank] and board_data[actual_rank][prev_file]
 				if prev_piece then
-					byte_pos = byte_pos + 3 + 1 -- 3 bytes for UTF-8 chess piece + 1 space
+					byte_pos = byte_pos + 1 + 3 + 2 -- space + 3 bytes UTF-8 piece + 2 spaces
 				else
-					byte_pos = byte_pos + 1 + 1 -- 1 byte for space + 1 separator space
+					byte_pos = byte_pos + 4 -- 4 spaces
 				end
 			end
 
@@ -75,15 +76,14 @@ local function apply_board_highlights(buf, board_data, should_flip)
 			local bg_hl_group = is_light and "ChessLightSquare" or "ChessDarkSquare"
 
 			if piece then
-				-- Highlight the piece character with both piece color and square background
+				-- Highlight the entire 4-character tile
+				vim.api.nvim_buf_add_highlight(buf, -1, bg_hl_group, line_num, byte_pos, byte_pos + 6)
+				-- Highlight piece character (skip first space, highlight the 3-byte piece)
 				local piece_hl_group = piece.color == "white" and "ChessWhitePiece" or "ChessBlackPiece"
-				-- Apply background to the entire square (piece + space after it)
-				vim.api.nvim_buf_add_highlight(buf, -1, bg_hl_group, line_num, byte_pos, byte_pos + 4)
-				-- Apply piece color on top
-				vim.api.nvim_buf_add_highlight(buf, -1, piece_hl_group, line_num, byte_pos, byte_pos + 3)
+				vim.api.nvim_buf_add_highlight(buf, -1, piece_hl_group, line_num, byte_pos + 1, byte_pos + 4)
 			else
-				-- Highlight empty square background (2 spaces)
-				vim.api.nvim_buf_add_highlight(buf, -1, bg_hl_group, line_num, byte_pos, byte_pos + 2)
+				-- Highlight empty square (4 spaces)
+				vim.api.nvim_buf_add_highlight(buf, -1, bg_hl_group, line_num, byte_pos, byte_pos + 4)
 			end
 		end
 	end
@@ -100,7 +100,7 @@ local function render_board(board_data, should_flip)
 	}
 
 	local lines = {}
-	local file_labels = should_flip and "  h g f e d c b a" or "  a b c d e f g h"
+	local file_labels = should_flip and "   h   g   f   e   d   c   b   a  " or "   a   b   c   d   e   f   g   h  "
 	table.insert(lines, file_labels)
 
 	for rank_idx = 1, 8 do
@@ -112,10 +112,11 @@ local function render_board(board_data, should_flip)
 			local piece = board_data[actual_rank] and board_data[actual_rank][file]
 
 			if piece then
-				line = line .. pieces[piece.color][piece.type] .. " "
+				-- Center piece in 4-character tile: space + piece + space + space
+				line = line .. " " .. pieces[piece.color][piece.type] .. "  "
 			else
-				-- Empty square - use space, background color will distinguish light/dark
-				line = line .. "  "
+				-- Empty square - 4 spaces for consistent tile width
+				line = line .. "    "
 			end
 		end
 
@@ -173,7 +174,8 @@ end
 -- Combine board and info panel side by side
 local function combine_side_by_side(board_lines, info_panel)
 	local display_lines = {}
-	local target_width = 20 -- Visual width of board (including rank labels)
+	local target_width = 36 -- Visual width of board (including rank labels)
+	-- 2 (rank) + 32 (8 tiles * 4 chars) + 2 (trailing rank + space) = 36
 
 	for i = 1, math.max(#board_lines, #info_panel) do
 		local board_part = board_lines[i] or ""
