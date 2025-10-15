@@ -38,21 +38,23 @@ local function apply_board_highlights(buf, board_data, should_flip)
 	-- Clear existing highlights
 	vim.api.nvim_buf_clear_namespace(buf, -1, 0, -1)
 
-	-- Board structure with square tiles:
+	-- Board structure (no border):
 	-- Line 0: file labels
-	-- Lines 1, 3, 5, 7, 9, 11, 13, 15: ranks 8-1 (with pieces)
-	-- Lines 2, 4, 6, 8, 10, 12, 14: empty spacing lines
-	-- Line 16: file labels
+	-- Lines 1-8: ranks 1-8
+	-- Line 9: file labels
 
 	for rank_idx = 1, 8 do
 		local actual_rank = should_flip and rank_idx or (9 - rank_idx)
-		-- Each rank now takes 2 lines (piece line + empty line), except last rank
-		local line_num = (rank_idx - 1) * 2 + 1 -- Lines 1, 3, 5, 7, 9, 11, 13, 15
-		local spacing_line_num = line_num + 1 -- Lines 2, 4, 6, 8, 10, 12, 14
+		local line_num = rank_idx -- Lines 1-8 (0-indexed)
 
 		for file_idx = 1, 8 do
 			local file = should_flip and (9 - file_idx) or file_idx
 			local piece = board_data[actual_rank] and board_data[actual_rank][file]
+
+			-- Board format: "8 ♜ ♞ ♝ ♛ ♚ ♝ ♞ ♜  8"
+			-- Position: rank_num(1) + space(1) + squares...
+			-- Each square: piece_char (3 bytes for UTF-8 or 1 space) + separator space
+			-- UTF-8 byte lengths: chess pieces = 3 bytes, space = 1 byte
 
 			-- Calculate byte position by counting bytes from start of line
 			local byte_pos = 2 -- Start after "8 "
@@ -62,9 +64,9 @@ local function apply_board_highlights(buf, board_data, should_flip)
 				local prev_file = should_flip and (9 - f) or f
 				local prev_piece = board_data[actual_rank] and board_data[actual_rank][prev_file]
 				if prev_piece then
-					byte_pos = byte_pos + 1 + 3 + 2 -- space + 3 bytes UTF-8 piece + 2 spaces
+					byte_pos = byte_pos + 3 + 1 -- 3 bytes for UTF-8 chess piece + 1 space
 				else
-					byte_pos = byte_pos + 4 -- 4 spaces
+					byte_pos = byte_pos + 1 + 1 -- 1 byte for space + 1 separator space
 				end
 			end
 
@@ -72,21 +74,16 @@ local function apply_board_highlights(buf, board_data, should_flip)
 			local is_light = (actual_rank + file) % 2 == 0
 			local bg_hl_group = is_light and "ChessLightSquare" or "ChessDarkSquare"
 
-			-- Highlight piece line
 			if piece then
-				-- Highlight the entire 4-character tile
-				vim.api.nvim_buf_add_highlight(buf, -1, bg_hl_group, line_num, byte_pos, byte_pos + 6)
-				-- Highlight piece character (skip first space, highlight the 3-byte piece)
+				-- Highlight the piece character with both piece color and square background
 				local piece_hl_group = piece.color == "white" and "ChessWhitePiece" or "ChessBlackPiece"
-				vim.api.nvim_buf_add_highlight(buf, -1, piece_hl_group, line_num, byte_pos + 1, byte_pos + 4)
-			else
-				-- Highlight empty square (4 spaces)
+				-- Apply background to the entire square (piece + space after it)
 				vim.api.nvim_buf_add_highlight(buf, -1, bg_hl_group, line_num, byte_pos, byte_pos + 4)
-			end
-
-			-- Highlight spacing line (if not last rank)
-			if rank_idx < 8 then
-				vim.api.nvim_buf_add_highlight(buf, -1, bg_hl_group, spacing_line_num, byte_pos, byte_pos + 4)
+				-- Apply piece color on top
+				vim.api.nvim_buf_add_highlight(buf, -1, piece_hl_group, line_num, byte_pos, byte_pos + 3)
+			else
+				-- Highlight empty square background (2 spaces)
+				vim.api.nvim_buf_add_highlight(buf, -1, bg_hl_group, line_num, byte_pos, byte_pos + 2)
 			end
 		end
 	end
@@ -103,7 +100,7 @@ local function render_board(board_data, should_flip)
 	}
 
 	local lines = {}
-	local file_labels = should_flip and "   h   g   f   e   d   c   b   a  " or "   a   b   c   d   e   f   g   h  "
+	local file_labels = should_flip and "  h g f e d c b a" or "  a b c d e f g h"
 	table.insert(lines, file_labels)
 
 	for rank_idx = 1, 8 do
@@ -115,21 +112,15 @@ local function render_board(board_data, should_flip)
 			local piece = board_data[actual_rank] and board_data[actual_rank][file]
 
 			if piece then
-				-- Center piece in 4-character tile: space + piece + space + space
-				line = line .. " " .. pieces[piece.color][piece.type] .. "  "
+				line = line .. pieces[piece.color][piece.type] .. " "
 			else
-				-- Empty square - 4 spaces for consistent tile width
-				line = line .. "    "
+				-- Empty square - use space, background color will distinguish light/dark
+				line = line .. "  "
 			end
 		end
 
 		line = line .. " " .. tostring(actual_rank)
 		table.insert(lines, line)
-
-		-- Add empty line after each rank (except last) to make tiles square
-		if rank_idx < 8 then
-			table.insert(lines, "  " .. string.rep("    ", 8))
-		end
 	end
 
 	table.insert(lines, file_labels)
@@ -182,8 +173,7 @@ end
 -- Combine board and info panel side by side
 local function combine_side_by_side(board_lines, info_panel)
 	local display_lines = {}
-	local target_width = 36 -- Visual width of board (including rank labels)
-	-- 2 (rank) + 32 (8 tiles * 4 chars) + 2 (trailing rank + space) = 36
+	local target_width = 20 -- Visual width of board (including rank labels)
 
 	for i = 1, math.max(#board_lines, #info_panel) do
 		local board_part = board_lines[i] or ""
