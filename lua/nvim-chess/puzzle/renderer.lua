@@ -212,16 +212,16 @@ end
 
 -- Render complete puzzle display
 -- @param puzzle table: Puzzle data
--- @param buf number|nil: Optional buffer handle for applying highlights
 -- @return table: Array of display lines
-function M.render_puzzle(puzzle, buf)
+-- @return table|nil: Board state for highlighting (position and should_flip)
+function M.render_puzzle(puzzle)
 	if not puzzle.fen then
-		return create_fallback_display(puzzle)
+		return create_fallback_display(puzzle), nil
 	end
 
 	local board_state = engine.create_board_from_fen(puzzle.fen)
 	if not board_state or not board_state.position then
-		return create_fallback_display(puzzle)
+		return create_fallback_display(puzzle), nil
 	end
 
 	local player_color = puzzle.player_color or "White"
@@ -230,12 +230,19 @@ function M.render_puzzle(puzzle, buf)
 	local board_lines = render_board(board_state.position, should_flip)
 	local info_panel = create_info_panel(puzzle)
 
-	-- Apply highlights if buffer provided
-	if buf then
-		apply_board_highlights(buf, board_state.position, should_flip)
-	end
+	local display_lines = combine_side_by_side(board_lines, info_panel)
 
-	return combine_side_by_side(board_lines, info_panel)
+	-- Return display lines and board state for highlighting
+	return display_lines, { position = board_state.position, should_flip = should_flip }
+end
+
+-- Apply highlights to a puzzle buffer
+-- @param buf number: Buffer handle
+-- @param board_state table: Board state with position and should_flip
+function M.apply_puzzle_highlights(buf, board_state)
+	if board_state and board_state.position then
+		apply_board_highlights(buf, board_state.position, board_state.should_flip)
+	end
 end
 
 -- Create or get puzzle buffer

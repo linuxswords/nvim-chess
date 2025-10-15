@@ -161,8 +161,11 @@ function M.show_puzzle()
 
 	-- Create buffer and render
 	local buf = renderer.create_puzzle_buffer(current_puzzle.id)
-	local display_lines = renderer.render_puzzle(current_puzzle, buf)
+	local display_lines, board_state = renderer.render_puzzle(current_puzzle)
 	buffer.set_lines(buf, display_lines)
+
+	-- Apply highlights AFTER setting lines
+	renderer.apply_puzzle_highlights(buf, board_state)
 
 	-- Setup keymaps
 	renderer.setup_keymaps(buf, {
