@@ -38,24 +38,21 @@ local function apply_board_highlights(buf, board_data, should_flip)
 	-- Clear existing highlights
 	vim.api.nvim_buf_clear_namespace(buf, -1, 0, -1)
 
-	-- Board structure (no border):
+	-- Board structure with square tiles:
 	-- Line 0: file labels
-	-- Lines 1-8: ranks 1-8
-	-- Line 9: file labels
+	-- Lines 1, 3, 5, 7, 9, 11, 13, 15: ranks 8-1 (with pieces)
+	-- Lines 2, 4, 6, 8, 10, 12, 14: empty spacing lines
+	-- Line 16: file labels
 
 	for rank_idx = 1, 8 do
 		local actual_rank = should_flip and rank_idx or (9 - rank_idx)
-		local line_num = rank_idx -- Lines 1-8 (0-indexed)
+		-- Each rank now takes 2 lines (piece line + empty line), except last rank
+		local line_num = (rank_idx - 1) * 2 + 1 -- Lines 1, 3, 5, 7, 9, 11, 13, 15
+		local spacing_line_num = line_num + 1 -- Lines 2, 4, 6, 8, 10, 12, 14
 
 		for file_idx = 1, 8 do
 			local file = should_flip and (9 - file_idx) or file_idx
 			local piece = board_data[actual_rank] and board_data[actual_rank][file]
-
-			-- Board format: "8  ♜   ♞   ♝   ♛   ♚   ♝   ♞   ♜   8"
-			-- Position: rank_num(1) + space(1) + squares...
-			-- Each square: 4 characters total
-			-- With piece: space(1) + piece(3 bytes UTF-8) + space(1) + space(1)
-			-- Empty: space(1) + space(1) + space(1) + space(1)
 
 			-- Calculate byte position by counting bytes from start of line
 			local byte_pos = 2 -- Start after "8 "
@@ -75,6 +72,7 @@ local function apply_board_highlights(buf, board_data, should_flip)
 			local is_light = (actual_rank + file) % 2 == 0
 			local bg_hl_group = is_light and "ChessLightSquare" or "ChessDarkSquare"
 
+			-- Highlight piece line
 			if piece then
 				-- Highlight the entire 4-character tile
 				vim.api.nvim_buf_add_highlight(buf, -1, bg_hl_group, line_num, byte_pos, byte_pos + 6)
@@ -84,6 +82,11 @@ local function apply_board_highlights(buf, board_data, should_flip)
 			else
 				-- Highlight empty square (4 spaces)
 				vim.api.nvim_buf_add_highlight(buf, -1, bg_hl_group, line_num, byte_pos, byte_pos + 4)
+			end
+
+			-- Highlight spacing line (if not last rank)
+			if rank_idx < 8 then
+				vim.api.nvim_buf_add_highlight(buf, -1, bg_hl_group, spacing_line_num, byte_pos, byte_pos + 4)
 			end
 		end
 	end
@@ -122,6 +125,11 @@ local function render_board(board_data, should_flip)
 
 		line = line .. " " .. tostring(actual_rank)
 		table.insert(lines, line)
+
+		-- Add empty line after each rank (except last) to make tiles square
+		if rank_idx < 8 then
+			table.insert(lines, "  " .. string.rep("    ", 8))
+		end
 	end
 
 	table.insert(lines, file_labels)
