@@ -19,6 +19,14 @@ end
 -- Initialize highlights when module loads
 setup_highlights()
 
+-- Re-apply highlights when colorscheme changes
+vim.api.nvim_create_autocmd("ColorScheme", {
+	group = vim.api.nvim_create_augroup("NvimChessHighlights", { clear = true }),
+	callback = function()
+		setup_highlights()
+	end,
+})
+
 -- Apply syntax highlighting to chess pieces in buffer
 -- @param buf number: Buffer handle
 -- @param board_data table: 2D array of pieces
