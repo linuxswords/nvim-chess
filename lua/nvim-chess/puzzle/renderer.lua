@@ -153,10 +153,18 @@ end
 -- Combine board and info panel side by side
 local function combine_side_by_side(board_lines, info_panel)
 	local display_lines = {}
+	local target_width = 20 -- Visual width of board (including rank labels)
+
 	for i = 1, math.max(#board_lines, #info_panel) do
-		local board_part = board_lines[i] or string.rep(" ", 20)
+		local board_part = board_lines[i] or ""
 		local info_part = info_panel[i] or ""
-		table.insert(display_lines, board_part .. "   " .. info_part)
+
+		-- Calculate visual width and pad to consistent width
+		local visual_width = vim.fn.strdisplaywidth(board_part)
+		local padding_needed = target_width - visual_width
+		local padding = string.rep(" ", math.max(0, padding_needed))
+
+		table.insert(display_lines, board_part .. padding .. "   " .. info_part)
 	end
 	return display_lines
 end
