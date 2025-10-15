@@ -15,8 +15,8 @@ local function setup_highlights()
 	-- Board square highlights (subtle background)
 	-- Light squares: lighter green background
 	vim.api.nvim_set_hl(0, "ChessLightSquare", { bg = "#6BCD6B", ctermbg = 77 })
-	-- Dark squares: pure black background
-	vim.api.nvim_set_hl(0, "ChessDarkSquare", { bg = "#000000", ctermbg = 0 })
+	-- Dark squares: light grey background
+	vim.api.nvim_set_hl(0, "ChessDarkSquare", { bg = "#808080", ctermbg = 244 })
 end
 
 -- Initialize highlights when module loads
