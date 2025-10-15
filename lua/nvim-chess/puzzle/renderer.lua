@@ -8,12 +8,15 @@ local buffer = require("nvim-chess.utils.buffer")
 -- Define highlight groups for chess pieces and squares
 local function setup_highlights()
 	-- Chess piece highlights
-	vim.api.nvim_set_hl(0, "ChessWhitePiece", { fg = "#FFFFFF", bold = true })
-	vim.api.nvim_set_hl(0, "ChessBlackPiece", { fg = "#000000", bold = true })
+	-- Using both GUI colors (true color) and cterm colors (256-color fallback)
+	vim.api.nvim_set_hl(0, "ChessWhitePiece", { fg = "#FFFFFF", ctermfg = 15, bold = true })
+	vim.api.nvim_set_hl(0, "ChessBlackPiece", { fg = "#000000", ctermfg = 0, bold = true })
 
 	-- Board square highlights (subtle background)
-	vim.api.nvim_set_hl(0, "ChessLightSquare", { bg = "#4A9B4A" })
-	vim.api.nvim_set_hl(0, "ChessDarkSquare", { bg = "#000000" })
+	-- Light squares: green background
+	vim.api.nvim_set_hl(0, "ChessLightSquare", { bg = "#4A9B4A", ctermbg = 71 })
+	-- Dark squares: pure black background
+	vim.api.nvim_set_hl(0, "ChessDarkSquare", { bg = "#000000", ctermbg = 0 })
 end
 
 -- Initialize highlights when module loads
