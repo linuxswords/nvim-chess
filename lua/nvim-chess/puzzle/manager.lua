@@ -164,6 +164,18 @@ function M.show_puzzle()
 	local display_lines, board_state = renderer.render_puzzle(current_puzzle)
 	buffer.set_lines(buf, display_lines)
 
+	-- Get last move for highlighting (if any moves have been made)
+	if board_state and #current_puzzle.moves_made > 0 then
+		local last_move_str = current_puzzle.moves_made[#current_puzzle.moves_made]
+		-- Parse move format like "e2e4" into from/to squares
+		if last_move_str and #last_move_str >= 4 then
+			board_state.last_move = {
+				from = last_move_str:sub(1, 2),  -- e.g., "e2"
+				to = last_move_str:sub(3, 4),    -- e.g., "e4"
+			}
+		end
+	end
+
 	-- Apply highlights AFTER setting lines
 	renderer.apply_puzzle_highlights(buf, board_state)
 

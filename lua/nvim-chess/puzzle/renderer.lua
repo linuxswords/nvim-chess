@@ -17,6 +17,12 @@ local function setup_highlights()
 	vim.api.nvim_set_hl(0, "ChessLightSquare", { bg = "#F0D9B5", ctermbg = 223 })
 	-- Dark squares: saddle brown background
 	vim.api.nvim_set_hl(0, "ChessDarkSquare", { bg = "#8B4513", ctermbg = 94 })
+
+	-- Last move highlighting (gold blended with square colors)
+	-- Light squares with last move: cream + gold blend
+	vim.api.nvim_set_hl(0, "ChessLastMoveLight", { bg = "#F4D9A7", ctermbg = 222 })
+	-- Dark squares with last move: brown + gold blend
+	vim.api.nvim_set_hl(0, "ChessLastMoveDark", { bg = "#B07B3F", ctermbg = 136 })
 end
 
 -- Initialize highlights when module loads
@@ -30,13 +36,39 @@ vim.api.nvim_create_autocmd("ColorScheme", {
 	end,
 })
 
+-- Convert algebraic notation (e.g., "e4") to rank and file numbers
+-- @param square string: Algebraic notation like "e4"
+-- @return number, number: rank (1-8), file (1-8)
+local function parse_square(square)
+	if not square or #square < 2 then
+		return nil, nil
+	end
+	local file = string.byte(square, 1) - string.byte("a") + 1
+	local rank = tonumber(square:sub(2, 2))
+	return rank, file
+end
+
 -- Apply syntax highlighting to chess pieces in buffer
 -- @param buf number: Buffer handle
 -- @param board_data table: 2D array of pieces
 -- @param should_flip boolean: Whether board is flipped
-local function apply_board_highlights(buf, board_data, should_flip)
+-- @param last_move table|nil: Optional last move { from = "e2", to = "e4" }
+local function apply_board_highlights(buf, board_data, should_flip, last_move)
 	-- Clear existing highlights
 	vim.api.nvim_buf_clear_namespace(buf, -1, 0, -1)
+
+	-- Parse last move if provided
+	local last_move_squares = {}
+	if last_move then
+		local from_rank, from_file = parse_square(last_move.from)
+		local to_rank, to_file = parse_square(last_move.to)
+		if from_rank and from_file then
+			last_move_squares[from_rank .. "," .. from_file] = true
+		end
+		if to_rank and to_file then
+			last_move_squares[to_rank .. "," .. to_file] = true
+		end
+	end
 
 	-- Board structure (no border):
 	-- Line 0: file labels
@@ -70,9 +102,17 @@ local function apply_board_highlights(buf, board_data, should_flip)
 				end
 			end
 
+			-- Check if this square was part of the last move
+			local is_last_move = last_move_squares[actual_rank .. "," .. file]
+
 			-- Determine square color for background
 			local is_light = (actual_rank + file) % 2 == 0
-			local bg_hl_group = is_light and "ChessLightSquare" or "ChessDarkSquare"
+			local bg_hl_group
+			if is_last_move then
+				bg_hl_group = is_light and "ChessLastMoveLight" or "ChessLastMoveDark"
+			else
+				bg_hl_group = is_light and "ChessLightSquare" or "ChessDarkSquare"
+			end
 
 			if piece then
 				-- Highlight the piece character with both piece color and square background
@@ -239,10 +279,10 @@ end
 
 -- Apply highlights to a puzzle buffer
 -- @param buf number: Buffer handle
--- @param board_state table: Board state with position and should_flip
+-- @param board_state table: Board state with position, should_flip, and optional last_move
 function M.apply_puzzle_highlights(buf, board_state)
 	if board_state and board_state.position then
-		apply_board_highlights(buf, board_state.position, board_state.should_flip)
+		apply_board_highlights(buf, board_state.position, board_state.should_flip, board_state.last_move)
 	end
 end
 
