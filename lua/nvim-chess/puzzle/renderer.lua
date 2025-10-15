@@ -117,6 +117,16 @@ local function render_board(board_data, should_flip)
 	return lines
 end
 
+-- Pad string to specific visual width
+-- @param str string: String to pad
+-- @param width number: Target visual width
+-- @return string: Padded string
+local function pad_to_width(str, width)
+	local current_width = vim.fn.strdisplaywidth(str)
+	local padding = string.rep(" ", math.max(0, width - current_width))
+	return str .. padding
+end
+
 -- Create info panel for puzzle
 -- @param puzzle table: Puzzle data
 -- @return table: Array of info panel lines
@@ -124,12 +134,12 @@ local function create_info_panel(puzzle)
 	local info_panel = {
 		"┌─ 🧩 LICHESS PUZZLE ─────────┐",
 		"│                             │",
-		"│ ID:     " .. string.format("%-18s", puzzle.id) .. "│",
-		"│ Rating: " .. string.format("%-18s", tostring(puzzle.rating)) .. "│",
-		"│ Plays:  " .. string.format("%-18s", tostring(puzzle.plays or "N/A")) .. "│",
+		"│ ID:     " .. pad_to_width(puzzle.id, 20) .. "│",
+		"│ Rating: " .. pad_to_width(tostring(puzzle.rating), 20) .. "│",
+		"│ Plays:  " .. pad_to_width(tostring(puzzle.plays or "N/A"), 20) .. "│",
 		"│                             │",
-		"│ Task: " .. string.format("%-20s", "Find best move") .. "│",
-		"│       " .. string.format("%-20s", "for " .. puzzle.player_color) .. "│",
+		"│ Task: " .. pad_to_width("Find best move", 22) .. "│",
+		"│       " .. pad_to_width("for " .. puzzle.player_color, 22) .. "│",
 		"│                             │",
 		"├─ CONTROLS ──────────────────┤",
 		"│ (m) Make move               │",
