@@ -9,7 +9,8 @@ local buffer = require("nvim-chess.utils.buffer")
 local function setup_highlights()
 	-- Chess piece highlights
 	-- Using both GUI colors (true color) and cterm colors (256-color fallback)
-	vim.api.nvim_set_hl(0, "ChessWhitePiece", { fg = "#FFFFFF", ctermfg = 15, bold = true })
+	-- White pieces: white foreground with black background creates border effect
+	vim.api.nvim_set_hl(0, "ChessWhitePiece", { fg = "#FFFFFF", bg = "#000000", ctermfg = 15, ctermbg = 0, bold = true })
 	vim.api.nvim_set_hl(0, "ChessBlackPiece", { fg = "#000000", ctermfg = 0, bold = true })
 
 	-- Board square highlights (classic wood style)
@@ -115,12 +116,18 @@ local function apply_board_highlights(buf, board_data, should_flip, last_move)
 			end
 
 			if piece then
-				-- Highlight the piece character with both piece color and square background
 				local piece_hl_group = piece.color == "white" and "ChessWhitePiece" or "ChessBlackPiece"
-				-- Apply background to the entire square (piece + space after it)
-				vim.api.nvim_buf_add_highlight(buf, -1, bg_hl_group, line_num, byte_pos, byte_pos + 4)
-				-- Apply piece color on top
-				vim.api.nvim_buf_add_highlight(buf, -1, piece_hl_group, line_num, byte_pos, byte_pos + 3)
+
+				if piece.color == "white" then
+					-- White pieces: use piece highlight (white fg + black bg) for the character itself
+					vim.api.nvim_buf_add_highlight(buf, -1, piece_hl_group, line_num, byte_pos, byte_pos + 3)
+					-- Apply square background to the space after the piece
+					vim.api.nvim_buf_add_highlight(buf, -1, bg_hl_group, line_num, byte_pos + 3, byte_pos + 4)
+				else
+					-- Black pieces: apply square background to entire square, then piece color on top
+					vim.api.nvim_buf_add_highlight(buf, -1, bg_hl_group, line_num, byte_pos, byte_pos + 4)
+					vim.api.nvim_buf_add_highlight(buf, -1, piece_hl_group, line_num, byte_pos, byte_pos + 3)
+				end
 			else
 				-- Highlight empty square background (2 spaces)
 				vim.api.nvim_buf_add_highlight(buf, -1, bg_hl_group, line_num, byte_pos, byte_pos + 2)
