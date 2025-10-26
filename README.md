@@ -2,6 +2,10 @@
 
 [![Tests](https://github.com/linuxswords/nvim-chess/actions/workflows/test.yml/badge.svg)](https://github.com/linuxswords/nvim-chess/actions/workflows/test.yml)
 
+## Demo
+
+https://github.com/linuxswords/nvim-chess/raw/master/doc/nvim-daily-puzzle.webm
+
 A Neovim plugin for playing chess on Lichess.org directly from your editor.
 
 ## Features
