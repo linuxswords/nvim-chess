@@ -4,7 +4,7 @@
 
 ## Demo
 
-https://github.com/linuxswords/nvim-chess/raw/master/doc/nvim-daily-puzzle.webm
+![Demo](./assets/nvim-daily-puzzle.webm)
 
 A Neovim plugin for playing chess on Lichess.org directly from your editor.
 
