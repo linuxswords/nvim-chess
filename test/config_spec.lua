@@ -14,6 +14,9 @@ describe('nvim-chess config', function()
       assert.is_nil(cfg.lichess.token)
       assert.are.equal(30000, cfg.lichess.timeout)
       assert.are.equal('https://lichess.org/api', cfg.lichess.base_url)
+
+      -- UI config
+      assert.are.equal('reuse', cfg.ui.puzzle_window_mode)
     end)
   end)
 
@@ -41,6 +44,22 @@ describe('nvim-chess config', function()
 
       local lichess_cfg = config.get_lichess_config()
       assert.are.equal('test', lichess_cfg.token)
+    end)
+
+    it('should return ui config section', function()
+      config.setup({
+        ui = { puzzle_window_mode = 'split' }
+      })
+
+      local ui_cfg = config.get_ui_config()
+      assert.are.equal('split', ui_cfg.puzzle_window_mode)
+    end)
+
+    it('should return default ui config when not specified', function()
+      config.setup({})
+
+      local ui_cfg = config.get_ui_config()
+      assert.are.equal('reuse', ui_cfg.puzzle_window_mode)
     end)
   end)
 end)

@@ -69,6 +69,7 @@ require('nvim-chess').setup({
     auto_refresh = true,               -- Auto-refresh board on updates
     show_coordinates = true,           -- Show board coordinates (a-h, 1-8)
     highlight_last_move = true,        -- Highlight the last move made
+    puzzle_window_mode = "reuse",      -- "reuse" to replace current buffer, "split" to always create new window
   }
 })
 ```
@@ -128,6 +129,23 @@ Use UCI (Universal Chess Interface) notation for moves:
 - `e1g1` - Castling (king side)
 
 ## Puzzle Solving
+
+### Puzzle Window Display Mode
+
+You can configure how puzzles are displayed when opened:
+
+- **`reuse`** (default): Replaces the current buffer with the puzzle. Useful for keeping your window layout clean.
+- **`split`**: Always creates a new split window for each puzzle. Useful if you want to keep your current buffer visible.
+
+Set this in your configuration:
+
+```lua
+require('nvim-chess').setup({
+  ui = {
+    puzzle_window_mode = "reuse",  -- or "split"
+  }
+})
+```
 
 ### Getting Started with Puzzles
 

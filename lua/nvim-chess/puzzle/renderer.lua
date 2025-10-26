@@ -4,6 +4,7 @@ local M = {}
 
 local engine = require("nvim-chess.chess.engine")
 local buffer = require("nvim-chess.utils.buffer")
+local config = require("nvim-chess.config")
 
 -- Define highlight groups for chess pieces and squares
 local function setup_highlights()
@@ -321,7 +322,10 @@ end
 -- @param buf number: Buffer handle
 -- @param old_puzzle_buf number|nil: Previous puzzle buffer to potentially delete
 function M.show_in_window(buf, old_puzzle_buf)
-	-- Check if we're already in a puzzle buffer and reuse that window
+	-- Get UI configuration
+	local ui_config = config.get_ui_config()
+	local window_mode = ui_config.puzzle_window_mode or "reuse"
+
 	local current_win = vim.api.nvim_get_current_win()
 	local current_buf = vim.api.nvim_win_get_buf(current_win)
 	local current_buf_name = vim.api.nvim_buf_get_name(current_buf)
@@ -331,8 +335,8 @@ function M.show_in_window(buf, old_puzzle_buf)
 
 	if win == -1 then
 		-- Buffer not visible anywhere
-		if in_puzzle_buffer then
-			-- Reuse current window
+		if window_mode == "reuse" then
+			-- Reuse current window (replace buffer)
 			vim.api.nvim_win_set_buf(current_win, buf)
 			vim.api.nvim_set_current_win(current_win)
 
@@ -340,8 +344,8 @@ function M.show_in_window(buf, old_puzzle_buf)
 			if old_puzzle_buf and vim.api.nvim_buf_is_valid(old_puzzle_buf) and old_puzzle_buf ~= buf then
 				vim.api.nvim_buf_delete(old_puzzle_buf, { force = true })
 			end
-		else
-			-- Create new split
+		elseif window_mode == "split" then
+			-- Always create new split
 			vim.cmd("split")
 			vim.api.nvim_win_set_buf(0, buf)
 		end
