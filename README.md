@@ -11,7 +11,6 @@ A Neovim plugin for playing chess on Lichess.org directly from your editor.
 - 👤 Profile and rating information
 - ✅ Move validation and UCI notation
 - 🔄 Auto-refresh and flip board functionality
-- 📊 Puzzle activity tracking
 
 ## Requirements
 
@@ -66,10 +65,6 @@ require('nvim-chess').setup({
     auto_refresh = true,               -- Auto-refresh board on updates
     show_coordinates = true,           -- Show board coordinates (a-h, 1-8)
     highlight_last_move = true,        -- Highlight the last move made
-  },
-  game = {
-    auto_accept_challenges = false,    -- Automatically accept incoming challenges
-    default_time_control = "10+0",     -- Default time control for new games
   }
 })
 ```
@@ -110,42 +105,6 @@ Then validate and activate:
 3. Otherwise: Prompts you to enter token
 
 ## Usage
-
-### Basic Workflow
-
-1. **Start streaming** for real-time updates:
-
-   ```vim
-   :ChessStartStreaming
-   ```
-
-2. **Create a new game**:
-
-   ```vim
-   :ChessNewGame 10+0
-   ```
-
-3. **Join an existing game**:
-
-   ```vim
-   :ChessJoinGame abc12345
-   ```
-
-4. **Make moves** using UCI notation:
-
-   ```vim
-   :ChessMove e2e4
-   ```
-
-   Or press `m` in the board buffer for interactive input.
-
-5. **View your profile**:
-
-   ```vim
-   :ChessProfile
-   ```
-
-### Chess Board Controls
 
 When viewing a chess board, use these keys:
 
@@ -217,21 +176,6 @@ When viewing a puzzle, use these keys:
 
 ## Commands
 
-### Game Commands
-
-| Command                 | Description                                |
-| ----------------------- | ------------------------------------------ |
-| `:ChessNewGame [time]`  | Create new game with optional time control |
-| `:ChessSeekGame [time]` | Seek a game with optional time control     |
-| `:ChessJoinGame {id}`   | Join existing game by ID                   |
-| `:ChessShowBoard [id]`  | Show board for current/specified game      |
-| `:ChessMove {move}`     | Make a move (UCI notation)                 |
-| `:ChessProfile`         | Display profile and ratings                |
-| `:ChessResign`          | Resign current game                        |
-| `:ChessAbort`           | Abort current game                         |
-| `:ChessStartStreaming`  | Start real-time event streaming            |
-| `:ChessStopStreaming`   | Stop all streaming                         |
-
 ### Puzzle Commands
 
 | Command                | Description                                          |
@@ -255,13 +199,6 @@ When viewing a puzzle, use these keys:
 | --------------- | -------------------------------- |
 | `:ChessVersion` | Show plugin version              |
 | `:ChessInfo`    | Show detailed plugin information |
-
-### Testing Commands
-
-| Command                | Description                                                  |
-| ---------------------- | ------------------------------------------------------------ |
-| `:ChessDemo [type]`    | Run demo scenarios (basic\|errors\|game\|bench\|interactive) |
-| `:ChessMock {on\|off}` | Enable/disable mock mode for testing                         |
 
 ## Board Display
 
@@ -325,8 +262,6 @@ You can test the plugin functionality without a Lichess account using the built-
 ### Quick Testing
 
 ```bash
-# Run a quick demo
-make demo
 
 # Run unit and demo tests
 make test
@@ -341,64 +276,9 @@ make test-integration
 # Run all tests including integration
 make test-all
 
-# Benchmark performance
-make bench
-```
-
-### Manual Testing
-
-```vim
-" Enable mock mode (no real API calls)
-:ChessMock on
-
-" Run interactive demo
-:ChessDemo interactive
-
-" Test basic functionality
-:ChessDemo basic
-
-" Test error scenarios
-:ChessDemo errors
-
-" Disable mock mode
-:ChessMock off
-```
-
-### Available Demo Types
-
-- `basic` - Profile, game creation, board display
-- `errors` - Error handling scenarios
-- `game` - Complete game flow with moves
-- `bench` - Performance benchmarking
-- `interactive` - Manual testing mode
-
-### Integration Testing
-
-Test with real Lichess API (requires personal access token):
-
-```bash
-# Get token from https://lichess.org/account/oauth/token
-export LICHESS_TOKEN=your_token_here
-
-# Run integration tests
-./integration-test.sh
-
-# Or directly with make
-make test-integration
-```
-
-Integration tests verify:
-
-- Token validation
-- Profile fetching
-- API rate limiting
-- Error handling
-- Network timeouts
-- Game operations
-
 ## Support
+```
 
 - File issues on GitHub
 - Check the documentation with `:help nvim-chess`
-- Use `:ChessDemo` for local testing without Lichess account
 - Ensure you have a valid Lichess token configured for real gameplay
