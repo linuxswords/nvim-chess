@@ -115,8 +115,6 @@ When viewing a chess board, use these keys:
 
 - `m` - Enter a move
 - `f` - Flip board orientation
-- `R` - Resign game
-- `A` - Abort game
 - `q` - Close board
 - `<C-r>` - Refresh board
 
@@ -265,7 +263,6 @@ The plugin is structured with these main modules:
   - `config.lua` - Configuration management
   - `api/` - Lichess API communication
   - `ui/` - Chess board rendering
-  - `game/` - Game state management
   - `auth/` - Authentication handling
   - `utils/` - Utility functions
 
