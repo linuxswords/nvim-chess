@@ -1,7 +1,7 @@
-*nvim-chess.txt*    A Neovim plugin for playing chess on Lichess.org
+*nvim-chess.txt*    A Neovim plugin for solving chess puzzles from Lichess.org
 
                               nvim-chess
-                  Chess plugin for Neovim with Lichess integration
+              Chess puzzle plugin for Neovim with Lichess integration
 
 ==============================================================================
 CONTENTS                                              *nvim-chess-contents*
@@ -18,127 +18,172 @@ CONTENTS                                              *nvim-chess-contents*
 ==============================================================================
 INTRODUCTION                                      *nvim-chess-introduction*
 
-nvim-chess is a Neovim plugin that allows you to play chess directly within
-your editor by connecting to Lichess.org. You can create games, join existing
-games, make moves, and view your profile - all without leaving Neovim.
+nvim-chess is a Neovim plugin that allows you to solve chess puzzles directly
+within your editor by connecting to Lichess.org. Train your tactical skills
+with daily puzzles and rating-matched training puzzles without leaving Neovim.
 
 Features:
-- Play chess games on Lichess.org
-- Real-time game updates via streaming API
-- Text-based chess board with Unicode or ASCII pieces
-- Profile and rating information
-- Game creation and management
-- Move validation and notation
+- Solve chess puzzles from Lichess.org
+- Daily puzzle support (no authentication required)
+- Rating-matched training puzzles (with authentication)
+- Text-based chess board with Unicode pieces and colored squares
+- Move validation and UCI notation
+- Puzzle hints and solutions
+- Authentication support for personalized puzzles
 
 ==============================================================================
 REQUIREMENTS                                      *nvim-chess-requirements*
 
 - Neovim 0.7+
 - plenary.nvim plugin (for HTTP requests)
-- Lichess.org account and personal access token
+- Lichess.org account and personal access token (optional, for authenticated features)
 
 ==============================================================================
 INSTALLATION                                      *nvim-chess-installation*
 
 Using packer.nvim: >
     use {
-      'your-username/nvim-chess',
+      'linuxswords/nvim-chess',
       requires = { 'nvim-lua/plenary.nvim' }
     }
 <
 
 Using lazy.nvim: >
     {
-      'your-username/nvim-chess',
-      dependencies = { 'nvim-lua/plenary.nvim' }
+      'linuxswords/nvim-chess',
+      dependencies = { 'nvim-lua/plenary.nvim' },
+      opts = {}
     }
 <
 
 ==============================================================================
 CONFIGURATION                                    *nvim-chess-configuration*
 
-Setup the plugin with your Lichess personal access token: >
+Setup the plugin with optional configuration: >
 
     require('nvim-chess').setup({
       lichess = {
-        token = "your_lichess_token_here",  -- Required
-        timeout = 30000,                   -- Request timeout in ms
+        token = nil,                           -- Personal access token (optional)
+        timeout = 30000,                       -- Request timeout in ms
+        base_url = "https://lichess.org/api",  -- API base URL
       },
       ui = {
-        board_style = "unicode",           -- "unicode" or "ascii"
-        auto_refresh = true,               -- Auto-refresh board
-        show_coordinates = true,           -- Show board coordinates
-        highlight_last_move = true,        -- Highlight last move
-      },
-      game = {
-        auto_accept_challenges = false,    -- Auto-accept challenges
-        default_time_control = "10+0",     -- Default time control
+        puzzle_window_mode = "reuse",          -- "reuse" or "split"
       }
     })
 <
 
+Configuration options:
+
+lichess.token                                        *nvim-chess-lichess-token*
+    Your Lichess personal access token. Optional for basic puzzle solving,
+    required for rating-matched puzzles and puzzle activity tracking.
+
+lichess.timeout                                    *nvim-chess-lichess-timeout*
+    Request timeout in milliseconds. Default: 30000 (30 seconds)
+
+lichess.base_url                                  *nvim-chess-lichess-base-url*
+    Lichess API base URL. Default: "https://lichess.org/api"
+
+ui.puzzle_window_mode                      *nvim-chess-ui-puzzle-window-mode*
+    How puzzles are displayed when opened:
+    - "reuse" (default): Replaces the current buffer with the puzzle
+    - "split": Always creates a new split window for each puzzle
+
 To get a personal access token:
 1. Go to https://lichess.org/account/oauth/token
-2. Create a new token with appropriate scopes
+2. Create a new token with scopes: puzzle:read
 3. Add it to your Neovim configuration
 
 ==============================================================================
 USAGE                                                    *nvim-chess-usage*
 
 Basic workflow:
-1. Configure the plugin with your Lichess token
-2. Start event streaming: `:ChessStartStreaming`
-3. Create a new game: `:ChessNewGame 10+0`
-4. Or join existing game: `:ChessJoinGame game_id`
-5. Make moves with: `:ChessMove e2e4` or press `m` in board buffer
-6. View your profile: `:ChessProfile`
+1. Solve the daily puzzle: `:ChessDailyPuzzle`
+2. Get training puzzles: `:ChessNextPuzzle`
+3. (Optional) Authenticate for rating-matched puzzles: `:ChessAuthenticate`
+4. Make moves using UCI notation (e.g., "e2e4") by pressing `m` in board buffer
+5. Use `h` for hints, `s` for solution, `n` for next puzzle
+
+Puzzle Controls:
+When viewing a puzzle board, use these keys:
+- `m` - Make a move (enter move in UCI notation)
+- `h` - Show hint (displays the starting and ending square)
+- `s` - Show full solution
+- `n` - Get next puzzle
+- `q` - Close puzzle
+- `<C-r>` - Refresh puzzle display
 
 ==============================================================================
 COMMANDS                                              *nvim-chess-commands*
 
-:ChessNewGame [time_control]                              *:ChessNewGame*
-    Create a new chess game. Optional time control format: "minutes+increment"
-    Example: `:ChessNewGame 10+0` creates a 10-minute game with no increment
+Puzzle Commands ~
 
-:ChessJoinGame {game_id}                                  *:ChessJoinGame*
-    Join an existing chess game by its ID
+:ChessDailyPuzzle                                      *:ChessDailyPuzzle*
+    Solve today's daily puzzle from Lichess. No authentication required.
+    The puzzle is the same for all users and refreshes daily.
 
-:ChessShowBoard [game_id]                                 *:ChessShowBoard*
-    Show the chess board for current or specified game
+:ChessNextPuzzle                                        *:ChessNextPuzzle*
+    Get the next training puzzle. Without authentication, returns random
+    puzzles. With authentication, returns rating-matched puzzles based on
+    your puzzle rating.
 
-:ChessMove {move}                                         *:ChessMove*
-    Make a chess move using UCI notation (e.g., "e2e4", "a7a8q")
+:ChessGetPuzzle {id}                                    *:ChessGetPuzzle*
+    Load a specific puzzle by its Lichess puzzle ID.
+    Example: `:ChessGetPuzzle abc123`
 
-:ChessProfile                                             *:ChessProfile*
-    Display your Lichess profile information and ratings
+:ChessPuzzleActivity                                *:ChessPuzzleActivity*
+    View your puzzle activity history. Requires authentication.
+    Shows recent puzzles you've attempted with results.
 
-:ChessResign                                              *:ChessResign*
-    Resign the current game
+Authentication Commands ~
 
-:ChessAbort                                               *:ChessAbort*
-    Abort the current game (only available in early game)
+:ChessAuthenticate [token]                          *:ChessAuthenticate*
+    Authenticate with Lichess. Behavior:
+    1. If token provided: Uses that token
+    2. If token configured in setup: Uses configured token
+    3. Otherwise: Prompts you to enter token
 
-:ChessStartStreaming                                      *:ChessStartStreaming*
-    Start streaming Lichess events for real-time updates
+    Example: `:ChessAuthenticate lip_abc123xyz`
 
-:ChessStopStreaming                                       *:ChessStopStreaming*
-    Stop all streaming connections
+:ChessStatus                                                *:ChessStatus*
+    Show current authentication status and username if authenticated.
+
+:ChessLogout                                                *:ChessLogout*
+    Logout from Lichess and clear the authentication session.
+
+Version Commands ~
+
+:ChessVersion                                              *:ChessVersion*
+    Show the nvim-chess plugin version.
+
+:ChessInfo                                                    *:ChessInfo*
+    Show detailed plugin information including version, author, and homepage.
 
 ==============================================================================
 KEYBINDINGS                                          *nvim-chess-keybindings*
 
-In chess board buffers, the following keybindings are available:
+In puzzle board buffers, the following keybindings are available:
 
-    q           Close the board buffer
-    m           Prompt for a move input
+    m           Make a move (prompts for UCI notation)
+    h           Show hint for current move
+    s           Show full solution
+    n           Get next puzzle
+    q           Close the puzzle buffer
     f           Flip the board orientation
-    R           Resign the current game
-    A           Abort the current game
     <C-r>       Refresh the board display
+
+Move Notation:
+Use UCI (Universal Chess Interface) notation for moves:
+- `e2e4` - Move piece from e2 to e4
+- `a7a8q` - Promote pawn to queen
+- `e1g1` - Castling (king side)
 
 ==============================================================================
 LICENSE                                                *nvim-chess-license*
 
 MIT License
+
+Copyright (c) 2024 linuxswords
 
  vim:tw=78:ts=8:ft=help:norl:

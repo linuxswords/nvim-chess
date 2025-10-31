@@ -87,12 +87,16 @@ function M.get_puzzle_activity(max, before)
   return make_request("GET", "/puzzle/activity" .. query_string)
 end
 
+-- NOTE: Currently only used in integration tests
+-- TODO: Implement dashboard UI feature to display puzzle statistics
 function M.get_puzzle_dashboard(days)
   local query_string = days and ("?days=" .. days) or ""
   return make_request("GET", "/puzzle/dashboard/" .. (days or 30) .. query_string)
 end
 
 -- Submit puzzle round result
+-- NOTE: Not currently used - Lichess API requires web UI for puzzle completion tracking
+-- TODO: Implement if Lichess adds API support for puzzle result submission
 -- Params:
 --   puzzle_id: The puzzle ID
 --   win: boolean - true if solved correctly, false if failed
