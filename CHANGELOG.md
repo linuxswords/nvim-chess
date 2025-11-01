@@ -5,6 +5,42 @@ All notable changes to nvim-chess will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - 2025-11-01
+
+### Added
+
+- Configuration option for puzzle window mode
+  - New `ui.puzzle_window_mode` config: "reuse" or "split"
+  - Allows choosing between reusing current buffer or opening in new split
+  - Provides flexibility for different workflow preferences
+
+### Changed
+
+- **Major UI/UX improvements** to chess board rendering
+  - Enhanced board highlighting system
+    - Last move highlighting for better move tracking
+    - Improved highlighting for white pieces
+  - Comprehensive color scheme overhaul
+    - Refined board tile colors for better contrast
+    - Updated piece colors for improved visibility
+    - Better background colors for both GUI and terminal (cterm)
+    - Lighter, more pleasant color palette
+  - Board rendering refinements
+    - Fixed alignment issues for consistent board display
+    - Improved padding for cleaner appearance
+    - Fixed column offset calculations
+    - Better tile sizing and spacing
+    - Multiple renderer fixes for edge cases
+
+### Improved
+
+- Documentation and visual guides
+  - Updated README with better explanations
+  - Improved setup instructions
+  - Enhanced GIF demonstrations (looping, updated views)
+  - Added visual examples of board views
+  - Cleaner, more professional presentation
+
 ## [0.4.2] - 2025-10-13
 
 ### Fixed
@@ -384,6 +420,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Neovim 0.7+
 - plenary.nvim
 
+[0.6.0]: https://github.com/linuxswords/nvim-chess/compare/v0.5.0...v0.6.0
 [0.4.2]: https://github.com/linuxswords/nvim-chess/compare/v0.4.1...v0.4.2
 [0.4.1]: https://github.com/linuxswords/nvim-chess/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/linuxswords/nvim-chess/compare/v0.3.5...v0.4.0
